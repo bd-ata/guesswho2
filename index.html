@@ -5,26 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五年一班猜猜我是誰</title>
     <style>
-        /* 原始樣式 */
+        /* 基本樣式 */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             text-align: center;
+            margin: 0;
+            padding: 0;
         }
         h1 {
             color: #333;
+            margin-top: 20px;
         }
         p {
             color: #666;
             font-size: 18px;
         }
-        .grid-container {
+        /* 主要佈局 */
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 10px;
+        }
+        /* 棄置區和考慮區 */
+        #discardArea, #considerArea {
+            width: 20%;
+            min-height: 500px;
+            background-color: #e0e0e0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #discardArea h2, #considerArea h2 {
+            color: #333;
+        }
+        /* 主要圖片區域 */
+        #imageGrid {
+            width: 55%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-gap: 20px;
-            max-width: 800px;
-            margin: 20px auto;
         }
+        /* 圖片樣式 */
         .grid-item {
             position: relative;
             width: 100%;
@@ -34,19 +58,17 @@
             width: 100%;
             height: auto;
             border-radius: 8px;
-            transition: transform 0.5s ease-in-out, border-color 0.5s ease-in-out, z-index 0.5s ease-in-out;
-            z-index: 1;
-            position: relative;
+            transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
             border: 2px solid transparent;
         }
         .grid-item img:hover {
-            transform: scale(1.3);
-            border: 5px solid #ff5722;
-            z-index: 10;
+            transform: scale(1.1);
+            border: 2px solid #ff5722;
         }
         .active {
-            border: 5px solid blue; /* 選中時顯示藍色邊框 */
+            border: 5px solid blue;
         }
+        /* 彈出框樣式 */
         .input-popup, .placement-popup {
             display: none;
             position: absolute;
@@ -55,13 +77,13 @@
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
-            width: 60%;
+            width: 200px;
             text-align: center;
         }
         .input-popup input {
             padding: 5px;
             font-size: 14px;
-            width: 80%;
+            width: 90%;
             margin-top: 5px;
         }
         .input-popup button, .placement-popup button {
@@ -77,10 +99,6 @@
             background-color: #4CAF50;
             color: white;
         }
-        .cancel-button {
-            background-color: #808080;
-            color: white;
-        }
         /* 按鈕顏色 */
         .yes-button {
             background-color: green;
@@ -93,15 +111,6 @@
         .consider-button {
             background-color: yellow;
             color: black;
-        }
-        /* 新增棄置區和考慮區的樣式 */
-        #discardArea, #considerArea {
-            max-width: 800px;
-            margin: 20px auto;
-            text-align: center;
-        }
-        #discardArea h2, #considerArea h2 {
-            color: #333;
         }
         /* 排行榜的樣式 */
         #leaderboard {
@@ -119,35 +128,43 @@
             font-size: 16px;
             margin-bottom: 5px;
         }
+        /* 棄置區和考慮區的圖片樣式 */
+        #discardArea .grid-item img, #considerArea .grid-item img {
+            width: 100%;
+            height: auto;
+            transform: scale(0.8);
+        }
     </style>
 </head>
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以選擇喔！</p>
+<p>點選圖片放大來看猜猜看這是不是您家寶貝～點一下就可以選擇喔！</p>
 
-<div class="grid-container" id="imageGrid">
-    <!-- 這裡將由 JavaScript 動態插入圖片 -->
+<!-- 主容器 -->
+<div class="main-container">
+    <!-- 棄置區 -->
+    <div id="discardArea">
+        <h2>棄置區</h2>
+        <div class="grid-container" id="discardGrid">
+            <!-- 棄置的圖片將放置在這裡 -->
+        </div>
+    </div>
+    <!-- 主要圖片區域 -->
+    <div id="imageGrid">
+        <!-- 圖片將由 JavaScript 動態插入 -->
+    </div>
+    <!-- 考慮區 -->
+    <div id="considerArea">
+        <h2>考慮區</h2>
+        <div class="grid-container" id="considerGrid">
+            <!-- 考慮中的圖片將放置在這裡 -->
+        </div>
+    </div>
 </div>
 
 <!-- 顯示嘗試次數和成功次數 -->
 <p id="stats">總共嘗試了0次，成功了0次。</p>
-
-<!-- 棄置區 -->
-<div id="discardArea">
-    <h2>棄置區</h2>
-    <div class="grid-container" id="discardGrid">
-        <!-- 棄置的圖片將放置在這裡 -->
-    </div>
-</div>
-
-<!-- 考慮區 -->
-<div id="considerArea">
-    <h2>考慮區</h2>
-    <div class="grid-container" id="considerGrid">
-        <!-- 考慮中的圖片將放置在這裡 -->
-    </div>
-</div>
 
 <!-- 排行榜 -->
 <div id="leaderboard">
@@ -163,17 +180,14 @@
     <button class="yes-button" onclick="handlePlacement('是')">是</button>
     <button class="no-button" onclick="handlePlacement('不是')">不是</button>
     <button class="consider-button" onclick="handlePlacement('考慮中')">考慮中</button>
-    <br>
-    <button class="cancel-button" onclick="closePlacementPopup()">取消</button>
 </div>
 
 <!-- 姓名輸入彈出框 -->
 <div id="inputPopup" class="input-popup">
-    <p id="popupText">輸入寶貝的名字試試看吧</p>
+    <p>輸入寶貝的名字試試看吧</p>
     <input type="text" id="nameInput" placeholder="輸入學生的名字">
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
-    <button class="cancel-button" onclick="closeInputPopup()">取消輸入</button>
 </div>
 
 <script>
@@ -220,6 +234,7 @@
     let mainGridImages = [];
     let discardedImages = [];
     let consideredImages = [];
+    let yesAttempts = 0; // 選擇「是」的次數
 
     // 排行榜數據
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
@@ -229,8 +244,9 @@
         const leaderboardList = document.getElementById('leaderboardList');
         leaderboardList.innerHTML = '';
         leaderboard.slice(0, 10).forEach((entry, index) => {
+            const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
             const li = document.createElement('li');
-            li.textContent = `${entry.name} - 成功次數：${entry.successes}`;
+            li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
             leaderboardList.appendChild(li);
         });
     }
@@ -252,10 +268,18 @@
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
-            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
-            div.onclick = () => openPlacementPopup(student, div);
+            const img = document.createElement('img');
+            img.src = student.image;
+            img.alt = `Student ${index + 1}`;
+
+            div.appendChild(img);
             grid.appendChild(div);
+
             mainGridImages.push({student: student, element: div});
+
+            // 事件監聽
+            div.addEventListener('mouseenter', () => openPlacementPopup(student, div));
+            div.addEventListener('mouseleave', () => closePlacementPopup());
         });
     }
 
@@ -265,7 +289,7 @@
         const popup = document.getElementById('placementPopup');
 
         // 移除上一次點擊的圖片邊框
-        if (lastClickedImage) {
+        if (lastClickedImage && lastClickedImage !== imgElement) {
             lastClickedImage.classList.remove('active');
         }
 
@@ -280,17 +304,14 @@
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
-
-        // 重置按鈕狀態
-        document.querySelector('.yes-button').style.display = 'inline-block';
     }
 
     // 處理選擇
     function handlePlacement(choice) {
         selectedPlacement = choice;
-        closePlacementPopup();
 
         if (choice === '是') {
+            yesAttempts++;
             // 如果選擇「是」，則彈出姓名輸入框
             openInputPopup();
         } else {
@@ -375,8 +396,9 @@
             if (index > -1) {
                 const imageItem = mainGridImages.splice(index, 1)[0];
                 imageItem.element.classList.remove('active');
-                imageItem.element.onclick = () => openPlacementPopup(currentStudent, imageItem.element);
-                imageItem.element.style.transform = 'scale(0.5)'; // 縮小圖片
+                imageItem.element.addEventListener('mouseenter', () => openPlacementPopup(currentStudent, imageItem.element));
+                imageItem.element.addEventListener('mouseleave', () => closePlacementPopup());
+                imageItem.element.style.transform = 'scale(0.8)'; // 縮小圖片
                 targetArea.appendChild(imageItem.element);
                 targetArray.push(imageItem);
             }
@@ -405,15 +427,16 @@
 
     // 檢查是否進入排行榜
     function checkLeaderboard() {
-        // 將當前的成功次數與排行榜上的數據進行比較
-        let minSuccesses = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes : 0;
+        const correctRate = totalSuccesses / yesAttempts;
+        // 將當前的正確率與排行榜上的數據進行比較
+        let minCorrectRate = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes / leaderboard[leaderboard.length - 1].yesAttempts : 0;
 
-        if (totalSuccesses > minSuccesses || leaderboard.length < 10) {
+        if (correctRate > minCorrectRate || leaderboard.length < 10) {
             const playerName = prompt('恭喜你進入排行榜！請輸入你的名字：');
             if (playerName) {
-                leaderboard.push({name: playerName, successes: totalSuccesses});
-                // 按成功次數排序
-                leaderboard.sort((a, b) => b.successes - a.successes);
+                leaderboard.push({name: playerName, successes: totalSuccesses, yesAttempts: yesAttempts});
+                // 按正確率排序
+                leaderboard.sort((a, b) => (b.successes / b.yesAttempts) - (a.successes / a.yesAttempts));
                 // 保留前十名
                 leaderboard = leaderboard.slice(0, 10);
                 // 保存到 localStorage
@@ -444,6 +467,8 @@
     // 關閉「這是您家寶貝嗎？」彈出框
     function closePlacementPopup() {
         document.getElementById('placementPopup').style.display = 'none';
+        // 重置「是」按鈕的顯示
+        document.querySelector('.yes-button').style.display = 'inline-block';
     }
 
     window.onload = function() {
