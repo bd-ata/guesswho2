@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五年一班猜猜我是誰</title>
     <style>
-        /* 您的原始樣式 */
+        /* 原始樣式 */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -50,7 +50,7 @@
         .input-popup, .placement-popup {
             display: none;
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255, 0.95);
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -70,6 +70,8 @@
             margin-top: 10px;
             cursor: pointer;
             margin-right: 5px;
+            border: none;
+            border-radius: 3px;
         }
         .submit-button {
             background-color: #4CAF50;
@@ -79,7 +81,29 @@
             background-color: #808080;
             color: white;
         }
-        /* 新增排行榜的樣式 */
+        /* 按鈕顏色 */
+        .yes-button {
+            background-color: green;
+            color: white;
+        }
+        .no-button {
+            background-color: red;
+            color: white;
+        }
+        .consider-button {
+            background-color: yellow;
+            color: black;
+        }
+        /* 新增棄置區和考慮區的樣式 */
+        #discardArea, #considerArea {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        #discardArea h2, #considerArea h2 {
+            color: #333;
+        }
+        /* 排行榜的樣式 */
         #leaderboard {
             max-width: 800px;
             margin: 20px auto;
@@ -100,7 +124,7 @@
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以選擇分區放置喔！</p>
+<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以選擇喔！</p>
 
 <div class="grid-container" id="imageGrid">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
@@ -108,6 +132,22 @@
 
 <!-- 顯示嘗試次數和成功次數 -->
 <p id="stats">總共嘗試了0次，成功了0次。</p>
+
+<!-- 棄置區 -->
+<div id="discardArea">
+    <h2>棄置區</h2>
+    <div class="grid-container" id="discardGrid">
+        <!-- 棄置的圖片將放置在這裡 -->
+    </div>
+</div>
+
+<!-- 考慮區 -->
+<div id="considerArea">
+    <h2>考慮區</h2>
+    <div class="grid-container" id="considerGrid">
+        <!-- 考慮中的圖片將放置在這裡 -->
+    </div>
+</div>
 
 <!-- 排行榜 -->
 <div id="leaderboard">
@@ -117,12 +157,12 @@
     </ol>
 </div>
 
-<!-- 分區放置彈出框 -->
+<!-- 「這是您家寶貝嗎？」彈出框 -->
 <div id="placementPopup" class="placement-popup">
-    <p>是否願意分區放置？</p>
-    <button onclick="handlePlacement('是')">是</button>
-    <button onclick="handlePlacement('不是')">不是</button>
-    <button onclick="handlePlacement('考慮中')">考慮中</button>
+    <p>這是您家寶貝嗎？</p>
+    <button class="yes-button" onclick="handlePlacement('是')">是</button>
+    <button class="no-button" onclick="handlePlacement('不是')">不是</button>
+    <button class="consider-button" onclick="handlePlacement('考慮中')">考慮中</button>
     <br>
     <button class="cancel-button" onclick="closePlacementPopup()">取消</button>
 </div>
@@ -177,6 +217,9 @@
     let totalAttempts = 0;
     let totalSuccesses = 0;
     let selectedPlacement = '';
+    let mainGridImages = [];
+    let discardedImages = [];
+    let consideredImages = [];
 
     // 排行榜數據
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
@@ -204,18 +247,21 @@
     // 動態生成圖片
     function populateGrid() {
         const grid = document.getElementById('imageGrid');
+        grid.innerHTML = '';
         const shuffledStudents = shuffle(students); // 打亂順序
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
-            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPlacementPopup(${index}, this)">`;
+            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
+            div.onclick = () => openPlacementPopup(student, div);
             grid.appendChild(div);
+            mainGridImages.push({student: student, element: div});
         });
     }
 
-    // 顯示分區放置彈出框
-    function openPlacementPopup(index, imgElement) {
-        currentStudent = students[index];
+    // 顯示「這是您家寶貝嗎？」彈出框
+    function openPlacementPopup(student, imgElement) {
+        currentStudent = student;
         const popup = document.getElementById('placementPopup');
 
         // 移除上一次點擊的圖片邊框
@@ -234,9 +280,12 @@
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
+
+        // 重置按鈕狀態
+        document.querySelector('.yes-button').style.display = 'inline-block';
     }
 
-    // 處理分區放置的選擇
+    // 處理選擇
     function handlePlacement(choice) {
         selectedPlacement = choice;
         closePlacementPopup();
@@ -245,7 +294,8 @@
             // 如果選擇「是」，則彈出姓名輸入框
             openInputPopup();
         } else {
-            alert(`您選擇了「${choice}」`);
+            // 移動圖片到相應的區域
+            moveImage(choice);
             totalAttempts++;
             updateStats();
             closeAllPopups();
@@ -274,15 +324,77 @@
 
         if (guess === currentStudent.name) {
             totalSuccesses++;
-            alert(`恭喜你答對了～\n分區放置選擇：${selectedPlacement}`);
+            alert(`恭喜你答對了～`);
             updateStats();
             checkLeaderboard();
+            // 移除圖片
+            removeImageFromMainGrid();
         } else {
             alert('哎呀！不是喔～再試一次吧！');
             updateStats();
+            // 返回「這是您家寶貝嗎？」彈出框，且移除「是」按鈕
+            openPlacementPopupAfterWrongGuess();
         }
 
-        closeAllPopups();
+        closeInputPopup();
+    }
+
+    // 返回「這是您家寶貝嗎？」彈出框，移除「是」按鈕
+    function openPlacementPopupAfterWrongGuess() {
+        const popup = document.getElementById('placementPopup');
+        const imgElement = lastClickedImage;
+
+        // 設定彈出框的位置在圖片上方
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
+        popup.style.display = 'block';
+
+        // 隱藏「是」按鈕
+        document.querySelector('.yes-button').style.display = 'none';
+    }
+
+    // 移動圖片到棄置區或考慮區
+    function moveImage(choice) {
+        let targetArea = null;
+        let targetArray = null;
+
+        if (choice === '不是') {
+            targetArea = document.getElementById('discardGrid');
+            targetArray = discardedImages;
+        } else if (choice === '考慮中') {
+            targetArea = document.getElementById('considerGrid');
+            targetArray = consideredImages;
+        }
+
+        if (targetArea && targetArray) {
+            // 從主區域移除圖片
+            const index = mainGridImages.findIndex(item => item.student === currentStudent);
+            if (index > -1) {
+                const imageItem = mainGridImages.splice(index, 1)[0];
+                imageItem.element.classList.remove('active');
+                imageItem.element.onclick = () => openPlacementPopup(currentStudent, imageItem.element);
+                imageItem.element.style.transform = 'scale(0.5)'; // 縮小圖片
+                targetArea.appendChild(imageItem.element);
+                targetArray.push(imageItem);
+            }
+        }
+
+        // 如果主區域沒有圖片了，提示使用者可以重新選擇
+        if (mainGridImages.length === 0) {
+            alert('主區域已無圖片，您可以在考慮區或棄置區重新選擇。');
+        }
+    }
+
+    // 從主區域移除圖片
+    function removeImageFromMainGrid() {
+        const index = mainGridImages.findIndex(item => item.student === currentStudent);
+        if (index > -1) {
+            const imageItem = mainGridImages.splice(index, 1)[0];
+            imageItem.element.remove();
+        }
     }
 
     // 更新嘗試次數和成功次數
@@ -329,7 +441,7 @@
         document.getElementById('nameInput').value = '';
     }
 
-    // 關閉分區放置彈出框
+    // 關閉「這是您家寶貝嗎？」彈出框
     function closePlacementPopup() {
         document.getElementById('placementPopup').style.display = 'none';
     }
