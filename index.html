@@ -50,18 +50,19 @@
             display: none;
             position: absolute;
             background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
+            padding: 5px;
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
-            width: 70%;
-            left: 15%;
+            width: 60%; /* Smaller width than the enlarged image */
             text-align: center;
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%); /* Adjust for centering */
         }
         .input-popup input {
             padding: 5px;
             font-size: 14px;
-            width: 100%;
+            width: 80%; /* Smaller than the popup width */
         }
         .input-popup button {
             padding: 5px 10px;
@@ -156,7 +157,7 @@
         });
     }
 
-    // Open the input popup for a specific student and position it above the clicked image
+    // Open the input popup for a specific student and position it directly above the clicked image
     function openPopup(index, imgElement) {
         currentStudent = students[index];
         const popup = document.getElementById('inputPopup');
@@ -170,10 +171,10 @@
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
 
-        // Set popup position above the image
+        // Set popup position directly on top of the image
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2); // Center
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // Position above image
+        const y = rect.top + window.scrollY + rect.height / 2 - popup.offsetHeight / 2; // Position exactly above the image
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
