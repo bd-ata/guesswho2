@@ -18,36 +18,33 @@
             color: #666;
             font-size: 18px;
         }
-        .stack-container {
+        .fan-container {
             position: relative;
             width: 100%;
             height: calc(100vh - 150px); /* 減去標題和描述的高度 */
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
         }
         .card {
             position: absolute;
-            width: 200px;
-            height: 300px;
-            margin: auto;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(var(--offsetX)) translateY(var(--offsetY));
+            bottom: 0;
+            transform-origin: bottom center;
             cursor: pointer;
-            transition: transform 0.5s ease-in-out, left 0.5s ease-in-out, top 0.5s ease-in-out;
-            z-index: var(--zIndex);
+            transition: transform 0.5s ease-in-out, bottom 0.5s ease-in-out;
         }
         .card img {
-            width: 100%;
-            height: 100%;
+            width: 150px;
+            height: 225px;
             border-radius: 8px;
         }
         /* 點擊後的動畫效果 */
         .card.active {
-            transform: translate(-50%, -50%) rotate(0deg) scale(1.5);
+            bottom: 50%;
+            transform: translateX(-50%) translateY(50%) rotate(0deg) scale(1.2);
             left: 50%;
-            top: 50%;
             z-index: 1001;
-            transition: transform 1s ease-in-out;
         }
         /* 遮罩層 */
         #overlay {
@@ -60,17 +57,47 @@
             z-index: 1000;
             display: none;
         }
+        /* 提示框樣式 */
+        .prompt-popup {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 1002;
+        }
+        .prompt-popup button {
+            padding: 5px 10px;
+            font-size: 16px;
+            margin: 10px 5px 0 5px;
+            cursor: pointer;
+        }
+        .yes-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .no-button {
+            background-color: #f44336;
+            color: white;
+        }
+        .maybe-button {
+            background-color: #ff9800;
+            color: white;
+        }
         /* 輸入框樣式 */
         .input-popup {
             position: absolute;
-            top: 50%;
+            top: 20%;
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
-            z-index: 1002;
+            z-index: 1003;
         }
         .input-popup input {
             padding: 5px;
@@ -83,13 +110,7 @@
             font-size: 16px;
             margin: 10px 5px 0 5px;
             cursor: pointer;
-        }
-        .submit-button {
             background-color: #4CAF50;
-            color: white;
-        }
-        .cancel-button {
-            background-color: #808080;
             color: white;
         }
     </style>
@@ -97,19 +118,26 @@
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片來看看這是不是你們家寶貝～點一下圖片就會放大喔！</p>
+<p>點選圖片來看看這是不是你們家寶貝～</p>
 
-<div class="stack-container" id="stackContainer">
+<div class="fan-container" id="fanContainer">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
 </div>
 
 <!-- 遮罩層 -->
 <div id="overlay">
+    <!-- 提示框 -->
+    <div id="promptPopup" class="prompt-popup">
+        <p>這張是我家寶貝嗎？</p>
+        <button class="yes-button" onclick="handleAnswer('yes')">是</button>
+        <button class="no-button" onclick="handleAnswer('no')">不是</button>
+        <button class="maybe-button" onclick="handleAnswer('maybe')">考慮中</button>
+    </div>
     <!-- 輸入框 -->
-    <div id="inputPopup" class="input-popup">
-        <p id="popupText">輸入寶貝的名字試試看吧！</p>
+    <div id="inputPopup" class="input-popup" style="display: none;">
+        <p>輸入寶貝的名字試試看吧！</p>
         <input type="text" id="nameInput" placeholder="輸入學生的名字">
-        <button class="submit-button" onclick="checkGuess()">確認送出</button>
+        <button onclick="checkGuess()">確認送出</button>
     </div>
 </div>
 
@@ -154,35 +182,19 @@
     let currentStudent = null;
     let attempts = 0;
 
-    // 隨機排列圖片
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
+    // 动态生成扇形排列的图片
+    function populateFan() {
+        const container = document.getElementById('fanContainer');
+        const totalCards = students.length;
+        const angleStep = 60 / (totalCards - 1); // 总共60度的扇形展开
 
-    // 動態生成圖片
-    function populateStack() {
-        const container = document.getElementById('stackContainer');
-        const shuffledStudents = shuffle(students); // 打亂順序
-        shuffledStudents.forEach((student, index) => {
+        students.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'card';
 
-            // 隨機旋轉角度
-            const rotation = (Math.random() * 60 - 30) + 'deg';
-            // 隨機位移
-            const offsetX = (Math.random() * 200 - 100) + 'px';
-            const offsetY = (Math.random() * 200 - 100) + 'px';
-            // 設置 z-index
-            const zIndex = index;
-
-            div.style.setProperty('--rotation', rotation);
-            div.style.setProperty('--offsetX', offsetX);
-            div.style.setProperty('--offsetY', offsetY);
-            div.style.setProperty('--zIndex', zIndex);
+            // 计算每张卡片的旋转角度
+            const angle = -30 + (angleStep * index);
+            div.style.transform = `rotate(${angle}deg)`;
 
             div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
             div.onclick = () => openCard(div, student);
@@ -190,41 +202,60 @@
         });
     }
 
-    // 點擊圖片時的動畫效果
+    // 点击图片时的动画效果
     function openCard(card, student) {
-        if (isCardClicked) return; // 防止多次點擊
+        if (isCardClicked) return; // 防止多次点击
         isCardClicked = true;
         currentCard = card;
         currentStudent = student;
 
-        // 顯示遮罩層和輸入框
+        // 显示遮罩层和提示框
         const overlay = document.getElementById('overlay');
-        const popup = document.getElementById('inputPopup');
+        const promptPopup = document.getElementById('promptPopup');
         overlay.style.display = 'block';
-        popup.style.display = 'block';
+        promptPopup.style.display = 'block';
 
-        // 將卡片置於最上層並播放動畫
+        // 将卡片移至中央并播放动画
         card.classList.add('active');
     }
 
-    // 檢查用戶的猜測
+    // 处理用户的选择
+    function handleAnswer(answer) {
+        const promptPopup = document.getElementById('promptPopup');
+        const inputPopup = document.getElementById('inputPopup');
+
+        if (answer === 'yes') {
+            // 显示输入框
+            promptPopup.style.display = 'none';
+            inputPopup.style.display = 'block';
+        } else if (answer === 'no') {
+            // 关闭提示，返回扇形布局
+            closePopup();
+        } else if (answer === 'maybe') {
+            // 保留当前状态，允许用户再次选择
+            promptPopup.style.display = 'none';
+            isCardClicked = false;
+        }
+    }
+
+    // 检查用户的猜测
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
         attempts++;
 
         if (guess === currentStudent.name) {
-            alert(`恭喜你答對了！總共嘗試了 ${attempts} 次。`);
+            alert(`恭喜你答对了！总共尝试了 ${attempts} 次。`);
             endGame();
         } else {
-            alert('哎呀！不是喔～再試一次吧！');
-            // 移除當前圖片
+            alert('哎呀！不是喔～再试一次吧！');
+            // 移除当前图片
             currentCard.parentNode.removeChild(currentCard);
             closePopup();
 
-            // 檢查是否還有剩餘圖片
+            // 检查是否还有剩余图片
             const remainingCards = document.querySelectorAll('.card');
             if (remainingCards.length === 0) {
-                alert(`遊戲結束！總共嘗試了 ${attempts} 次，但沒有找到正確的寶貝。`);
+                alert(`游戏结束！总共尝试了 ${attempts} 次，但没有找到正确的宝贝。`);
                 endGame();
             } else {
                 isCardClicked = false;
@@ -232,36 +263,41 @@
         }
     }
 
-    // 關閉輸入框
+    // 关闭弹窗
     function closePopup() {
         const overlay = document.getElementById('overlay');
-        const popup = document.getElementById('inputPopup');
+        const promptPopup = document.getElementById('promptPopup');
+        const inputPopup = document.getElementById('inputPopup');
         overlay.style.display = 'none';
-        popup.style.display = 'none';
+        promptPopup.style.display = 'none';
+        inputPopup.style.display = 'none';
 
-        // 恢復圖片原狀
+        // 恢复图片原状
         if (currentCard) {
             currentCard.classList.remove('active');
         }
 
-        // 清空輸入框
+        // 清空输入框
         document.getElementById('nameInput').value = '';
+
+        isCardClicked = false;
     }
 
-    // 遊戲結束
+    // 游戏结束
     function endGame() {
-        // 隱藏所有元素
-        document.getElementById('stackContainer').style.display = 'none';
+        // 隐藏所有元素
+        document.getElementById('fanContainer').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
+        document.getElementById('promptPopup').style.display = 'none';
         document.getElementById('inputPopup').style.display = 'none';
 
-        // 顯示遊戲結束訊息
+        // 显示游戏结束信息
         const message = document.createElement('p');
-        message.innerText = `遊戲結束！總共嘗試了 ${attempts} 次。`;
+        message.innerText = `游戏结束！总共尝试了 ${attempts} 次。`;
         document.body.appendChild(message);
     }
 
-    window.onload = populateStack;
+    window.onload = populateFan;
 </script>
 
 </body>
