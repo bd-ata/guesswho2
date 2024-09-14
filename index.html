@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             text-align: center;
+            overflow: hidden; /* 防止滾動條出現 */
         }
         h1 {
             color: #333;
@@ -17,53 +18,36 @@
             color: #666;
             font-size: 18px;
         }
-        .grid-container {
+        .stack-container {
             position: relative;
-            width: 90%;
-            margin: 20px auto;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            width: 100%;
+            height: calc(100vh - 150px); /* 減去標題和描述的高度 */
+            overflow: hidden;
         }
-        .grid-item {
-            position: relative;
-            width: 100px;
-            height: 150px;
-            margin: 10px;
+        .card {
+            position: absolute;
+            width: 200px;
+            height: 300px;
+            margin: auto;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(var(--rotation)) translateX(var(--offsetX)) translateY(var(--offsetY));
             cursor: pointer;
-            transition: transform 0.3s ease;
+            transition: transform 0.5s ease-in-out, left 0.5s ease-in-out, top 0.5s ease-in-out;
+            z-index: var(--zIndex);
         }
-        .grid-item img {
+        .card img {
             width: 100%;
             height: 100%;
             border-radius: 8px;
-            transition: transform 0.3s ease;
-            transform-origin: center center;
-        }
-        /* 初始隨機旋轉 */
-        .grid-item {
-            transform: rotate(var(--rotation));
-        }
-        /* 滑過時放大並轉正 */
-        .grid-item:hover {
-            transform: scale(1.1) rotate(0deg);
-            z-index: 1;
         }
         /* 點擊後的動畫效果 */
-        .grid-item.active {
-            position: fixed;
-            top: 50%;
+        .card.active {
+            transform: translate(-50%, -50%) rotate(0deg) scale(1.5);
             left: 50%;
-            width: 80vw;
-            height: auto;
-            transform: translate(-50%, -50%) rotate(0deg);
+            top: 50%;
             z-index: 1001;
-            transition: all 0.5s ease-in-out;
-        }
-        .grid-item.active img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
+            transition: transform 1s ease-in-out;
         }
         /* 遮罩層 */
         #overlay {
@@ -76,58 +60,15 @@
             z-index: 1000;
             display: none;
         }
-        /* 輸入框樣式 */
-        .input-popup {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            z-index: 1002;
-        }
-        .input-popup input {
-            padding: 5px;
-            font-size: 16px;
-            width: 80%;
-            margin-top: 10px;
-        }
-        .input-popup button {
-            padding: 5px 10px;
-            font-size: 16px;
-            margin: 10px 5px 0 5px;
-            cursor: pointer;
-        }
-        .submit-button {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .cancel-button {
-            background-color: #808080;
-            color: white;
-        }
     </style>
 </head>
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以填入姓名來檢核是否猜對喔！</p>
+<p>點選圖片來看看這是不是你們家寶貝～點一下圖片就會放大喔！</p>
 
-<div class="grid-container" id="imageGrid">
+<div class="stack-container" id="stackContainer">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
-</div>
-
-<!-- 遮罩層 -->
-<div id="overlay">
-    <!-- 輸入框 -->
-    <div id="inputPopup" class="input-popup">
-        <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-        <input type="text" id="nameInput" placeholder="輸入學生的名字">
-        <button class="submit-button" onclick="checkGuess()">確認送出</button>
-        <button class="cancel-button" onclick="closePopup()">取消輸入</button>
-    </div>
 </div>
 
 <script>
@@ -166,8 +107,7 @@
         {image: 'guess32.jpg', name: '傅禹童'}
     ];
 
-    let currentStudent = null;
-    let lastClickedItem = null;
+    let isCardClicked = false;
 
     // 隨機排列圖片
     function shuffle(array) {
@@ -179,75 +119,60 @@
     }
 
     // 動態生成圖片
-    function populateGrid() {
-        const grid = document.getElementById('imageGrid');
+    function populateStack() {
+        const container = document.getElementById('stackContainer');
         const shuffledStudents = shuffle(students); // 打亂順序
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
-            div.className = 'grid-item';
+            div.className = 'card';
 
             // 隨機旋轉角度
-            const rotation = (Math.random() * 30 - 15) + 'deg';
+            const rotation = (Math.random() * 60 - 30) + 'deg';
+            // 隨機位移
+            const offsetX = (Math.random() * 200 - 100) + 'px';
+            const offsetY = (Math.random() * 200 - 100) + 'px';
+            // 設置 z-index
+            const zIndex = index;
+
             div.style.setProperty('--rotation', rotation);
+            div.style.setProperty('--offsetX', offsetX);
+            div.style.setProperty('--offsetY', offsetY);
+            div.style.setProperty('--zIndex', zIndex);
 
             div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
-            div.onclick = () => openPopup(index, div);
-            grid.appendChild(div);
+            div.onclick = () => openCard(div);
+            container.appendChild(div);
         });
     }
 
-    // 顯示輸入框，並在放大圖片中央顯示
-    function openPopup(index, gridItem) {
-        currentStudent = students[index];
-        const overlay = document.getElementById('overlay');
-        const popup = document.getElementById('inputPopup');
+    // 點擊圖片時的動畫效果
+    function openCard(card) {
+        if (isCardClicked) return; // 防止多次點擊
+        isCardClicked = true;
 
-        // 移除上一次點擊的圖片效果
-        if (lastClickedItem) {
-            lastClickedItem.classList.remove('active');
-        }
-
-        // 加上動畫效果
-        gridItem.classList.add('active');
-        lastClickedItem = gridItem;
+        // 移除其他卡片
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(c => {
+            if (c !== card) {
+                c.style.display = 'none';
+            }
+        });
 
         // 顯示遮罩層
-        overlay.style.display = 'block';
+        const overlay = document.createElement('div');
+        overlay.id = 'overlay';
+        document.body.appendChild(overlay);
 
-        // 顯示輸入框
-        popup.style.display = 'block';
+        // 將卡片置於最上層並播放動畫
+        card.classList.add('active');
+
+        // 當動畫結束後，移除遮罩層
+        card.addEventListener('transitionend', () => {
+            overlay.style.display = 'none';
+        });
     }
 
-    // 檢查輸入是否正確
-    function checkGuess() {
-        const guess = document.getElementById('nameInput').value.trim();
-        if (guess === currentStudent.name) {
-            alert('恭喜你答對了～');
-        } else {
-            alert('哎呀！不是喔～再試一次吧！');
-        }
-        closePopup();
-    }
-
-    // 關閉輸入框
-    function closePopup() {
-        const overlay = document.getElementById('overlay');
-        const popup = document.getElementById('inputPopup');
-
-        // 隱藏遮罩層和輸入框
-        overlay.style.display = 'none';
-        popup.style.display = 'none';
-
-        // 恢復圖片原狀
-        if (lastClickedItem) {
-            lastClickedItem.classList.remove('active');
-        }
-
-        // 清空輸入框
-        document.getElementById('nameInput').value = '';
-    }
-
-    window.onload = populateGrid;
+    window.onload = populateStack;
 </script>
 
 </body>
