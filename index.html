@@ -18,58 +18,86 @@
             font-size: 18px;
         }
         .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 20px;
-            max-width: 800px;
+            position: relative;
+            width: 90%;
             margin: 20px auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .grid-item {
             position: relative;
-            width: 100%;
+            width: 100px;
+            height: 150px;
+            margin: 10px;
             cursor: pointer;
+            transition: transform 0.3s ease;
         }
         .grid-item img {
             width: 100%;
-            height: auto;
+            height: 100%;
             border-radius: 8px;
-            transition: transform 0.5s ease-in-out, border-color 0.5s ease-in-out, z-index 0.5s ease-in-out;
-            z-index: 1;
-            position: relative;
-            border: 2px solid transparent;
+            transition: transform 0.3s ease;
             transform-origin: center center;
         }
-        /* 調整圖片在 hover 時的效果 */
-        .grid-item img:hover {
-            cursor: pointer;
-            border: 2px solid #ff5722;
+        /* 初始隨機旋轉 */
+        .grid-item {
+            transform: rotate(var(--rotation));
         }
-        /* 在圖片被選中時放大並添加藍色邊框 */
-        .grid-item img.active {
-            transform: scale(1.3);
-            border: 5px solid blue; /* 選中時顯示藍色邊框 */
-            z-index: 10;
+        /* 滑過時放大並轉正 */
+        .grid-item:hover {
+            transform: scale(1.1) rotate(0deg);
+            z-index: 1;
         }
-        .input-popup {
+        /* 點擊後的動畫效果 */
+        .grid-item.active {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 80vw;
+            height: auto;
+            transform: translate(-50%, -50%) rotate(0deg);
+            z-index: 1001;
+            transition: all 0.5s ease-in-out;
+        }
+        .grid-item.active img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        /* 遮罩層 */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
             display: none;
+        }
+        /* 輸入框樣式 */
+        .input-popup {
             position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             background-color: rgba(255, 255, 255, 0.9);
-            padding: 5px;
+            padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-            width: 60%;
             text-align: center;
+            z-index: 1002;
         }
         .input-popup input {
             padding: 5px;
-            font-size: 14px;
+            font-size: 16px;
             width: 80%;
+            margin-top: 10px;
         }
         .input-popup button {
             padding: 5px 10px;
-            font-size: 14px;
-            margin-top: 10px;
+            font-size: 16px;
+            margin: 10px 5px 0 5px;
             cursor: pointer;
         }
         .submit-button {
@@ -91,12 +119,15 @@
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
 </div>
 
-<!-- 輸入框 -->
-<div id="inputPopup" class="input-popup">
-    <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="輸入學生的名字">
-    <button class="submit-button" onclick="checkGuess()">確認送出</button>
-    <button class="cancel-button" onclick="closePopup()">取消輸入</button>
+<!-- 遮罩層 -->
+<div id="overlay">
+    <!-- 輸入框 -->
+    <div id="inputPopup" class="input-popup">
+        <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
+        <input type="text" id="nameInput" placeholder="輸入學生的名字">
+        <button class="submit-button" onclick="checkGuess()">確認送出</button>
+        <button class="cancel-button" onclick="closePopup()">取消輸入</button>
+    </div>
 </div>
 
 <script>
@@ -136,7 +167,7 @@
     ];
 
     let currentStudent = null;
-    let lastClickedImage = null;
+    let lastClickedItem = null;
 
     // 隨機排列圖片
     function shuffle(array) {
@@ -154,48 +185,37 @@
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
-            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPopup(${index}, this)">`;
+
+            // 隨機旋轉角度
+            const rotation = (Math.random() * 30 - 15) + 'deg';
+            div.style.setProperty('--rotation', rotation);
+
+            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
+            div.onclick = () => openPopup(index, div);
             grid.appendChild(div);
         });
     }
 
-    // 顯示輸入框，並固定在點選圖片的正上方
-    function openPopup(index, imgElement) {
+    // 顯示輸入框，並在放大圖片中央顯示
+    function openPopup(index, gridItem) {
         currentStudent = students[index];
+        const overlay = document.getElementById('overlay');
         const popup = document.getElementById('inputPopup');
 
-        // 移除上一次點擊的圖片邊框
-        if (lastClickedImage) {
-            lastClickedImage.classList.remove('active');
+        // 移除上一次點擊的圖片效果
+        if (lastClickedItem) {
+            lastClickedItem.classList.remove('active');
         }
 
-        // 加上藍色邊框並放大圖片
-        imgElement.classList.add('active');
-        lastClickedImage = imgElement;
+        // 加上動畫效果
+        gridItem.classList.add('active');
+        lastClickedItem = gridItem;
 
-        // 顯示輸入框以便獲取其尺寸
+        // 顯示遮罩層
+        overlay.style.display = 'block';
+
+        // 顯示輸入框
         popup.style.display = 'block';
-
-        // 設定輸入框的位置在圖片上方
-        const rect = imgElement.getBoundingClientRect();
-        const scale = 1.3; // 放大倍率
-        const scaledWidth = rect.width * scale;
-        const scaledHeight = rect.height * scale;
-        const deltaX = (scaledWidth - rect.width) / 2;
-        const deltaY = (scaledHeight - rect.height) / 2;
-        const newLeft = rect.left - deltaX + window.scrollX;
-        const newTop = rect.top - deltaY + window.scrollY;
-
-        // 獲取輸入框的尺寸
-        const popupWidth = popup.offsetWidth;
-        const popupHeight = popup.offsetHeight;
-
-        // 計算輸入框的位置，讓其位於放大後圖片的正上方
-        const x = newLeft + (scaledWidth / 2) - (popupWidth / 2);
-        const y = newTop - popupHeight - 10; // 在圖片上方 10px 顯示
-
-        popup.style.left = `${x}px`;
-        popup.style.top = `${y}px`;
     }
 
     // 檢查輸入是否正確
@@ -211,13 +231,20 @@
 
     // 關閉輸入框
     function closePopup() {
-        document.getElementById('inputPopup').style.display = 'none';
-        document.getElementById('nameInput').value = '';
+        const overlay = document.getElementById('overlay');
+        const popup = document.getElementById('inputPopup');
 
-        // 移除圖片邊框和放大效果
-        if (lastClickedImage) {
-            lastClickedImage.classList.remove('active');
+        // 隱藏遮罩層和輸入框
+        overlay.style.display = 'none';
+        popup.style.display = 'none';
+
+        // 恢復圖片原狀
+        if (lastClickedItem) {
+            lastClickedItem.classList.remove('active');
         }
+
+        // 清空輸入框
+        document.getElementById('nameInput').value = '';
     }
 
     window.onload = populateGrid;
