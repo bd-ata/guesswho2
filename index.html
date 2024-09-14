@@ -32,7 +32,7 @@
         }
         /* 棄置區和考慮區 */
         #discardArea, #considerArea {
-            width: 15%;
+            width: 8%;
             min-height: 500px;
             background-color: #e0e0e0;
             padding: 10px;
@@ -43,7 +43,7 @@
         }
         /* 主要圖片區域 */
         #imageGrid {
-            width: 65%;
+            width: 84%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-gap: 20px;
@@ -61,8 +61,11 @@
             transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
             border: 2px solid transparent;
         }
-        .grid-item img:hover {
-            transform: scale(1.1);
+        .grid-item img:hover,
+        .grid-item.enlarged img {
+            transform: scale(1.8); /* 放大180% */
+            border: 5px solid #ff5722; /* 加上色框 */
+            z-index: 10;
         }
         .active {
             border: 5px solid blue;
@@ -165,6 +168,12 @@
 <!-- 顯示嘗試次數和成功次數 -->
 <p id="stats">總共嘗試了0次，成功了0次。</p>
 
+<!-- 成績揭曉區 -->
+<div id="resultArea" style="display: none;">
+    <h2>遊戲結束！</h2>
+    <p>恭喜你找到您的寶貝！</p>
+</div>
+
 <!-- 排行榜 -->
 <div id="leaderboard">
     <h2>排行榜</h2>
@@ -250,13 +259,9 @@
         });
     }
 
-    // 隨機排列圖片
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
+    // 檢查是否為觸控裝置
+    function isTouchDevice() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints;
     }
 
     // 動態生成圖片
@@ -277,9 +282,37 @@
             mainGridImages.push({student: student, element: div});
 
             // 事件監聽
-            div.addEventListener('click', () => openPlacementPopup(student, div));
+            if (isTouchDevice()) {
+                // 觸控裝置
+                div.addEventListener('touchstart', (e) => handleImageTouch(e, student, div));
+            } else {
+                // 非觸控裝置
+                div.addEventListener('click', () => openPlacementPopup(student, div));
+            }
         });
     }
+
+    // 處理觸控事件
+    function handleImageTouch(e, student, imgElement) {
+        e.preventDefault();
+
+        if (!imgElement.classList.contains('enlarged')) {
+            // 第一次點擊，放大圖片
+            imgElement.classList.add('enlarged');
+        } else {
+            // 第二次點擊，顯示選項
+            openPlacementPopup(student, imgElement);
+        }
+    }
+
+    // 點擊其他地方時，縮小圖片
+    document.addEventListener('touchstart', function(e) {
+        if (!e.target.closest('.grid-item')) {
+            document.querySelectorAll('.grid-item.enlarged').forEach(function(el) {
+                el.classList.remove('enlarged');
+            });
+        }
+    });
 
     // 顯示「這是您家寶貝嗎？」彈出框
     function openPlacementPopup(student, imgElement) {
@@ -348,31 +381,25 @@
             checkLeaderboard();
             // 移除圖片
             removeImageFromMainGrid();
+            // 遊戲結束，進入成績揭曉區
+            endGame();
         } else {
             alert('哎呀！不是喔～再試一次吧！');
             updateStats();
-            // 返回「這是您家寶貝嗎？」彈出框，且移除「是」按鈕
-            openPlacementPopupAfterWrongGuess();
+            // 直接將圖片移到棄置區
+            moveImage('不是');
         }
 
         closeInputPopup();
     }
 
-    // 返回「這是您家寶貝嗎？」彈出框，移除「是」按鈕
-    function openPlacementPopupAfterWrongGuess() {
-        const popup = document.getElementById('placementPopup');
-        const imgElement = lastClickedImage;
-
-        // 設定彈出框的位置在圖片上方
-        const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
-        popup.style.top = `${y}px`;
-        popup.style.left = `${x}px`;
-        popup.style.display = 'block';
-
-        // 隱藏「是」按鈕
-        document.querySelector('.yes-button').style.display = 'none';
+    // 遊戲結束
+    function endGame() {
+        // 隱藏遊戲區域
+        document.querySelector('.main-container').style.display = 'none';
+        document.getElementById('stats').style.display = 'none';
+        // 顯示成績揭曉區
+        document.getElementById('resultArea').style.display = 'block';
     }
 
     // 移動圖片到棄置區或考慮區
@@ -429,16 +456,25 @@
         let minCorrectRate = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes / leaderboard[leaderboard.length - 1].yesAttempts : 0;
 
         if (correctRate > minCorrectRate || leaderboard.length < 10) {
-            const playerName = prompt('恭喜你進入排行榜！請輸入你的名字：');
+            // 將玩家資料暫時加入排行榜，待輸入姓名後再更新
+            leaderboard.push({name: '', successes: totalSuccesses, yesAttempts: yesAttempts});
+            // 按正確率排序
+            leaderboard.sort((a, b) => (b.successes / b.yesAttempts) - (a.successes / a.yesAttempts));
+            // 找到玩家的排名
+            const playerIndex = leaderboard.findIndex(entry => entry.name === '');
+            const rank = playerIndex + 1;
+            // 提示玩家輸入姓名，並顯示排名和成績
+            const playerName = prompt(`恭喜你進入排行榜！您的排名是第${rank}名，成績是 ${(correctRate*100).toFixed(2)}%。\n請輸入你的名字：`);
             if (playerName) {
-                leaderboard.push({name: playerName, successes: totalSuccesses, yesAttempts: yesAttempts});
-                // 按正確率排序
-                leaderboard.sort((a, b) => (b.successes / b.yesAttempts) - (a.successes / a.yesAttempts));
+                leaderboard[playerIndex].name = playerName;
                 // 保留前十名
                 leaderboard = leaderboard.slice(0, 10);
                 // 保存到 localStorage
                 localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
                 updateLeaderboard();
+            } else {
+                // 如果沒有輸入姓名，從排行榜中移除該項
+                leaderboard.splice(playerIndex,1);
             }
         }
     }
@@ -466,6 +502,15 @@
         document.getElementById('placementPopup').style.display = 'none';
         // 重置「是」按鈕的顯示
         document.querySelector('.yes-button').style.display = 'inline-block';
+    }
+
+    // 隨機排列圖片
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
     window.onload = function() {
