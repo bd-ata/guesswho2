@@ -2,59 +2,131 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五年一班猜猜我是誰</title>
     <style>
-        /* 全局样式 */
+        /* 您的原始樣式 */
         body {
-            margin: 0;
-            padding: 0;
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-        }
-        h1, p {
             text-align: center;
-            margin-top: 20px;
         }
-        .gallery {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin: 20px;
+        h1 {
+            color: #333;
         }
-        .card {
+        p {
+            color: #666;
+            font-size: 18px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .grid-item {
             position: relative;
-            width: 150px;
-            height: 225px;
-            margin: 10px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.3s ease-in-out, border 0.3s ease-in-out;
-            border: 2px solid transparent;
-            border-radius: 8px;
-        }
-        .card img {
             width: 100%;
-            height: 100%;
-            display: block;
+            cursor: pointer;
         }
-        /* 悬停效果：放大 */
-        .card:hover {
-            transform: scale(1.1);
+        .grid-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            transition: transform 0.5s ease-in-out, border-color 0.5s ease-in-out, z-index 0.5s ease-in-out;
             z-index: 1;
+            position: relative;
+            border: 2px solid transparent;
         }
-        /* 点击后的边框变色 */
-        .card.selected {
-            border: 2px solid #4CAF50;
+        .grid-item img:hover {
+            transform: scale(1.3);
+            border: 5px solid #ff5722;
+            z-index: 10;
+        }
+        .active {
+            border: 5px solid blue; /* 選中時顯示藍色邊框 */
+        }
+        .input-popup {
+            display: none;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            width: 60%;
+            text-align: center;
+        }
+        .input-popup input, .input-popup select {
+            padding: 5px;
+            font-size: 14px;
+            width: 80%;
+            margin-top: 5px;
+        }
+        .input-popup button {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-button {
+            background-color: #808080;
+            color: white;
+        }
+        /* 新增排行榜的樣式 */
+        #leaderboard {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: left;
+        }
+        #leaderboard h2 {
+            color: #333;
+        }
+        #leaderboard ol {
+            padding-left: 20px;
+        }
+        #leaderboard li {
+            font-size: 16px;
+            margin-bottom: 5px;
         }
     </style>
 </head>
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>將鼠標移到圖片上可以放大，點擊圖片會選中該圖片。</p>
+<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以填入姓名來檢核是否猜對喔！</p>
 
-<div class="gallery" id="gallery">
+<div class="grid-container" id="imageGrid">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
+</div>
+
+<!-- 顯示嘗試次數和成功次數 -->
+<p id="stats">總共嘗試了0次，成功了0次。</p>
+
+<!-- 排行榜 -->
+<div id="leaderboard">
+    <h2>排行榜</h2>
+    <ol id="leaderboardList">
+        <!-- 排行榜內容將由 JavaScript 動態插入 -->
+    </ol>
+</div>
+
+<!-- 輸入框 -->
+<div id="inputPopup" class="input-popup">
+    <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
+    <input type="text" id="nameInput" placeholder="輸入學生的名字">
+    <p>是否願意分區放置？</p>
+    <label><input type="radio" name="placement" value="是"> 是</label>
+    <label><input type="radio" name="placement" value="不是"> 不是</label>
+    <label><input type="radio" name="placement" value="考慮中"> 考慮中</label>
+    <br>
+    <button class="submit-button" onclick="checkGuess()">確認送出</button>
+    <button class="cancel-button" onclick="closePopup()">取消輸入</button>
 </div>
 
 <script>
@@ -93,30 +165,141 @@
         {image: 'guess32.jpg', name: '傅禹童'}
     ];
 
-    function populateGallery() {
-        const gallery = document.getElementById('gallery');
-        students.forEach((student, index) => {
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.innerHTML = `<img src="${student.image}" alt="${student.name}">`;
-            div.onclick = () => selectCard(div);
-            gallery.appendChild(div);
+    let currentStudent = null;
+    let lastClickedImage = null;
+    let totalAttempts = 0;
+    let totalSuccesses = 0;
+
+    // 排行榜數據
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+
+    // 更新排行榜
+    function updateLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboardList');
+        leaderboardList.innerHTML = '';
+        leaderboard.slice(0, 10).forEach((entry, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${entry.name} - 成功次數：${entry.successes}`;
+            leaderboardList.appendChild(li);
         });
     }
 
-    function selectCard(card) {
-        // 如果已經選中，則取消選中
-        if (card.classList.contains('selected')) {
-            card.classList.remove('selected');
+    // 隨機排列圖片
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // 動態生成圖片
+    function populateGrid() {
+        const grid = document.getElementById('imageGrid');
+        const shuffledStudents = shuffle(students); // 打亂順序
+        shuffledStudents.forEach((student, index) => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPopup(${index}, this)">`;
+            grid.appendChild(div);
+        });
+    }
+
+    // 顯示輸入框，並固定在點選圖片的正上方
+    function openPopup(index, imgElement) {
+        currentStudent = students[index];
+        const popup = document.getElementById('inputPopup');
+
+        // 移除上一次點擊的圖片邊框
+        if (lastClickedImage) {
+            lastClickedImage.classList.remove('active');
+        }
+
+        // 加上藍色邊框
+        imgElement.classList.add('active');
+        lastClickedImage = imgElement;
+
+        // 設定輸入框的位置在圖片上方
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
+        popup.style.display = 'block';
+    }
+
+    // 檢查輸入是否正確
+    function checkGuess() {
+        const guess = document.getElementById('nameInput').value.trim();
+        const placementOptions = document.getElementsByName('placement');
+        let selectedPlacement = '';
+        for (const option of placementOptions) {
+            if (option.checked) {
+                selectedPlacement = option.value;
+                break;
+            }
+        }
+
+        totalAttempts++;
+
+        if (guess === currentStudent.name) {
+            totalSuccesses++;
+            alert(`恭喜你答對了～\n分區放置選擇：${selectedPlacement}`);
         } else {
-            // 否則，選中該卡片，並取消其他卡片的選中狀態
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
+            alert('哎呀！不是喔～再試一次吧！');
+        }
+
+        updateStats();
+        checkLeaderboard();
+        closePopup();
+    }
+
+    // 更新嘗試次數和成功次數
+    function updateStats() {
+        const stats = document.getElementById('stats');
+        stats.textContent = `總共嘗試了${totalAttempts}次，成功了${totalSuccesses}次。`;
+    }
+
+    // 檢查是否進入排行榜
+    function checkLeaderboard() {
+        // 將當前的成功次數與排行榜上的數據進行比較
+        let minSuccesses = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes : 0;
+
+        if (totalSuccesses > minSuccesses || leaderboard.length < 10) {
+            const playerName = prompt('恭喜你進入排行榜！請輸入你的名字：');
+            if (playerName) {
+                leaderboard.push({name: playerName, successes: totalSuccesses});
+                // 按成功次數排序
+                leaderboard.sort((a, b) => b.successes - a.successes);
+                // 保留前十名
+                leaderboard = leaderboard.slice(0, 10);
+                // 保存到 localStorage
+                localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+                updateLeaderboard();
+            }
         }
     }
 
-    window.onload = populateGallery;
+    // 關閉輸入框
+    function closePopup() {
+        document.getElementById('inputPopup').style.display = 'none';
+        document.getElementById('nameInput').value = '';
+        // 重置分區放置選項
+        const placementOptions = document.getElementsByName('placement');
+        for (const option of placementOptions) {
+            option.checked = false;
+        }
+
+        // 移除圖片邊框
+        if (lastClickedImage) {
+            lastClickedImage.classList.remove('active');
+        }
+    }
+
+    window.onload = function() {
+        populateGrid();
+        updateLeaderboard();
+    };
 </script>
 
 </body>
