@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五年一班猜猜我是誰</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+            font-size: 18px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 每排兩張圖片 */
+            grid-gap: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .grid-item {
+            position: relative;
+            width: 100%;
+            cursor: pointer;
+        }
+        .grid-item img {
+            width: 100%;
+            height: auto; /* 確保圖片比例正確 */
+            border-radius: 8px;
+            transition: transform 0.5s ease-in-out, border-color 0.5s ease-in-out, z-index 0.5s ease-in-out; /* 添加動畫效果 */
+            z-index: 1; /* 預設圖片的 z-index */
+            position: relative; /* 設定相對定位以確保 z-index 生效 */
+        }
+        .grid-item img:hover {
+            transform: scale(1.3); /* 放大到130% */
+            border: 5px solid #ff5722; /* 當滑鼠懸停時顯示橙色邊框 */
+            z-index: 10; /* 提升 z-index，確保圖片放大時在最前方 */
+        }
+        .input-popup {
+            display: none;
+            position: absolute;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+        .input-popup input {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .input-popup button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .submit-button {
+            background-color: #4CAF50; /* 綠色背景 */
+            color: white;
+        }
+        .cancel-button {
+            background-color: #808080; /* 灰色背景 */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<h1>五年一班猜猜我是誰</h1>
+<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以填入姓名來檢核是否猜對喔！</p>
+
+<div class="grid-container" id="imageGrid">
+    <!-- Images will be inserted here by JavaScript -->
+</div>
+
+<!-- Input popup -->
+<div id="inputPopup" class="input-popup">
+    <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
+    <input type="text" id="nameInput" placeholder="Enter student's name">
+    <button class="submit-button" onclick="checkGuess()">確認送出</button>
+    <button class="cancel-button" onclick="closePopup()">取消輸入</button>
+</div>
+
+<script>
+    // Array of images and corresponding student names
+    const students = [
+        {image: 'guess01.jpg', name: '周筠棋'},
+        {image: 'guess02.jpg', name: '徐浩鈞'},
+        {image: 'guess03.jpg', name: '朱品睿'},
+        {image: 'guess04.jpg', name: '黃澔祤'},
+        {image: 'guess05.jpg', name: '歐宸嘉'},
+        {image: 'guess06.jpg', name: '黃煜程'},
+        {image: 'guess07.jpg', name: '詹運生'},
+        {image: 'guess08.jpg', name: '陳勁瑜'},
+        {image: 'guess09.jpg', name: '林則佐'},
+        {image: 'guess10.jpg', name: '林則佑'},
+        {image: 'guess11.jpg', name: '周兆員'},
+        {image: 'guess12.jpg', name: '廖淯翔'},
+        {image: 'guess13.jpg', name: '陳柏安'},
+        {image: 'guess14.jpg', name: '張幃睿'},
+        {image: 'guess15.jpg', name: '闕芷榕'},
+        {image: 'guess16.jpg', name: '張子晴'},
+        {image: 'guess17.jpg', name: '羅璽恩'},
+        {image: 'guess18.jpg', name: '朱采彤'},
+        {image: 'guess19.jpg', name: '高婧'},
+        {image: 'guess20.jpg', name: '吳欣穎'},
+        {image: 'guess21.jpg', name: '黃暐霓'},
+        {image: 'guess22.jpg', name: '韋欣圻'},
+        {image: 'guess23.jpg', name: '邱琝容'},
+        {image: 'guess24.jpg', name: '黃宇晨'},
+        {image: 'guess25.jpg', name: '黃昱馷'},
+        {image: 'guess26.jpg', name: '李孟軒'},
+        {image: 'guess27.jpg', name: '劉萱綺'},
+        {image: 'guess28.jpg', name: '劉芷晴'},
+        {image: 'guess29.jpg', name: '王心儀'},
+        {image: 'guess30.jpg', name: '張瑀航'},
+        {image: 'guess31.jpg', name: '陳湘晴'},
+        {image: 'guess32.jpg', name: '傅禹童'}
+    ];
+
+    let currentStudent = null;
+
+    // Shuffle the images array
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Populate the grid with shuffled images
+    function populateGrid() {
+        const grid = document.getElementById('imageGrid');
+        const shuffledStudents = shuffle(students); // Shuffle the student array
+        shuffledStudents.forEach((student, index) => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPopup(${index}, this)">`;
+            grid.appendChild(div);
+        });
+    }
+
+    // Open the input popup for a specific student and position it near the clicked image
+    function openPopup(index, imgElement) {
+        currentStudent = students[index];
+        const popup = document.getElementById('inputPopup');
+        
+        // Get the image position and size
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.right + 10; // Position the popup to the right of the image
+        const y = rect.top + window.scrollY; // Ensure correct vertical position with scrolling
+        
+        // Set popup position and display
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
+        popup.style.display = 'block';
+    }
+
+    // Check if the guess is correct
+    function checkGuess() {
+        const guess = document.getElementById('nameInput').value.trim();
+        if (guess === currentStudent.name) {
+            alert('恭喜你答對了～歡迎您趁此機會和孩子分享彼此的好惡，給孩子多一點心情日記的素材吧😊');
+        } else {
+            alert('哎呀！不是喔～再試一次吧！');
+        }
+        closePopup();
+    }
+
+    // Close the input popup
+    function closePopup() {
+        document.getElementById('inputPopup').style.display = 'none';
+        document.getElementById('nameInput').value = '';
+    }
+
+    // Initialize the grid on page load with shuffle animation
+    function startShuffleAnimation() {
+        const grid = document.getElementById('imageGrid');
+        grid.classList.add('shuffle'); // Add a class to trigger animation
+        setTimeout(() => {
+            grid.classList.remove('shuffle'); // Remove the class after animation
+            populateGrid(); // Populate the grid with shuffled images
+        }, 1000); // Animation duration
+    }
+
+    window.onload = startShuffleAnimation;
+</script>
+
+</body>
+</html>
