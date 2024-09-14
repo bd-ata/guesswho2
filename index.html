@@ -9,49 +9,47 @@
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             text-align: center;
-            overflow: hidden; /* 防止滾動條出現 */
+            overflow: hidden; /* 防止滚动条出现 */
+            position: relative;
         }
         h1 {
             color: #333;
+            margin-top: 20px;
         }
         p {
             color: #666;
             font-size: 18px;
+            margin-bottom: 20px;
         }
-        .arc-container {
+        .image-container {
             position: relative;
             width: 100%;
-            height: calc(100vh - 150px); /* 減去標題和描述的高度 */
+            height: calc(100vh - 150px); /* 调整以适应标题和描述的高度 */
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
         }
         .card {
             position: absolute;
-            bottom: 0;
-            transform-origin: bottom center;
-            cursor: pointer;
-            transition: transform 0.5s ease-in-out, bottom 0.5s ease-in-out;
-        }
-        .card img {
             width: 150px;
             height: 225px;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card img {
+            width: 100%;
+            height: 100%;
             border-radius: 8px;
         }
-        /* 點擊後的動畫效果 */
+        /* 悬停效果：旋转回正面并放大 */
+        .card:hover {
+            transform: rotate(0deg) scale(1.2);
+            z-index: 1;
+        }
+        /* 点击后的图片保持放大和正面 */
         .card.active {
-            bottom: 50%;
-            transform: translateX(-50%) translateY(50%) rotate(0deg) scale(1);
-            left: 50%;
-            z-index: 1001;
-            transition: all 0.5s ease-in-out;
+            transform: rotate(0deg) scale(1.2);
+            z-index: 2;
         }
-        .card.expanded img {
-            width: 80vw; /* 放大后的宽度 */
-            height: auto;
-        }
-        /* 遮罩層 */
+        /* 遮罩层 */
         #overlay {
             position: fixed;
             top: 0;
@@ -62,22 +60,22 @@
             z-index: 1000;
             display: none;
         }
-        /* 提示框樣式 */
+        /* 提示框样式 */
         .prompt-popup {
             position: absolute;
-            top: 30%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: #fff;
             padding: 15px;
             border-radius: 8px;
             text-align: center;
-            z-index: 1002; /* 提高 z-index，确保在最上方 */
+            z-index: 1001;
         }
         .prompt-popup button {
             padding: 5px 10px;
             font-size: 16px;
-            margin: 10px 5px 0 5px;
+            margin: 10px 5px;
             cursor: pointer;
         }
         .yes-button {
@@ -92,17 +90,18 @@
             background-color: #ff9800;
             color: white;
         }
-        /* 輸入框樣式 */
+        /* 输入框样式 */
         .input-popup {
             position: absolute;
-            top: 15%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: rgba(255, 255, 255, 0.9);
             padding: 15px;
             border-radius: 8px;
             text-align: center;
-            z-index: 1003; /* 提高 z-index，确保在最上方 */
+            z-index: 1002;
+            display: none;
         }
         .input-popup input {
             padding: 5px;
@@ -113,7 +112,7 @@
         .input-popup button {
             padding: 5px 10px;
             font-size: 16px;
-            margin: 10px 5px 0 5px;
+            margin-top: 10px;
             cursor: pointer;
             background-color: #4CAF50;
             color: white;
@@ -125,11 +124,11 @@
 <h1>五年一班猜猜我是誰</h1>
 <p>點選圖片來看看這是不是你們家寶貝～</p>
 
-<div class="arc-container" id="arcContainer">
-    <!-- 這裡將由 JavaScript 動態插入圖片 -->
+<div class="image-container" id="imageContainer">
+    <!-- 这里将由 JavaScript 动态插入图片 -->
 </div>
 
-<!-- 遮罩層 -->
+<!-- 遮罩层 -->
 <div id="overlay">
     <!-- 提示框 -->
     <div id="promptPopup" class="prompt-popup">
@@ -138,8 +137,8 @@
         <button class="no-button" onclick="handleAnswer('no')">不是</button>
         <button class="maybe-button" onclick="handleAnswer('maybe')">考慮中</button>
     </div>
-    <!-- 輸入框 -->
-    <div id="inputPopup" class="input-popup" style="display: none;">
+    <!-- 输入框 -->
+    <div id="inputPopup" class="input-popup">
         <p>輸入寶貝的名字試試看吧！</p>
         <input type="text" id="nameInput" placeholder="輸入學生的名字">
         <button onclick="checkGuess()">確認送出</button>
@@ -187,53 +186,67 @@
     let currentStudent = null;
     let attempts = 0;
 
-    // 动态生成弧形排列的图片
-    function populateArc() {
-        const container = document.getElementById('arcContainer');
-        const totalCards = students.length;
-        const radius = 500; // 圆弧的半径，可以根据需要调整
-        const angleStep = Math.PI / (totalCards + 1); // 计算每个卡片的角度间隔
+    // 动态生成随机散落的图片
+    function populateImages() {
+        const container = document.getElementById('imageContainer');
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
 
         students.forEach((student, index) => {
-            const angle = angleStep * (index + 1) - Math.PI / 2; // 起始角度为 -90 度
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
-
             const div = document.createElement('div');
             div.className = 'card';
-            div.style.left = `calc(50% + ${x}px)`;
-            div.style.bottom = `${-y + 50}px`; // 调整 y 位置，使卡片位于底部
 
-            // 旋转角度
-            const rotation = angle * (180 / Math.PI);
-            div.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+            // 随机位置
+            const posX = Math.random() * (containerWidth - 150);
+            const posY = Math.random() * (containerHeight - 225);
+
+            // 随机旋转角度在 -30 到 30 度之间
+            const rotation = (Math.random() * 60 - 30);
+
+            div.style.left = `${posX}px`;
+            div.style.top = `${posY}px`;
+            div.style.transform = `rotate(${rotation}deg)`;
+            div.dataset.rotation = rotation; // 存储初始旋转角度
 
             div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
+            div.onmouseenter = () => hoverCard(div);
+            div.onmouseleave = () => unhoverCard(div);
             div.onclick = () => openCard(div, student);
             container.appendChild(div);
         });
     }
 
-    // 点击图片时的动画效果
+    // 悬停效果：旋转回正面并放大
+    function hoverCard(card) {
+        if (isCardClicked) return; // 如果已经点击了卡片，什么都不做
+        card.style.transform = 'rotate(0deg) scale(1.2)';
+        card.style.zIndex = '1';
+    }
+
+    // 恢复卡片到初始状态
+    function unhoverCard(card) {
+        if (isCardClicked) return; // 如果已经点击了卡片，什么都不做
+        // 恢复初始旋转角度和大小
+        const originalRotation = card.dataset.rotation || '0';
+        card.style.transform = `rotate(${originalRotation}deg) scale(1)`;
+        card.style.zIndex = '';
+    }
+
+    // 当点击卡片时
     function openCard(card, student) {
         if (isCardClicked) return; // 防止多次点击
         isCardClicked = true;
         currentCard = card;
         currentStudent = student;
 
+        // 保持卡片放大和正面
+        card.classList.add('active');
+
         // 显示遮罩层和提示框
         const overlay = document.getElementById('overlay');
         const promptPopup = document.getElementById('promptPopup');
         overlay.style.display = 'block';
         promptPopup.style.display = 'block';
-
-        // 将卡片移至中央并播放动画
-        card.classList.add('active');
-
-        // 延迟放大图片，等待卡片移动到中央后
-        setTimeout(() => {
-            card.classList.add('expanded');
-        }, 500); // 与 CSS 中的 transition 时间匹配
     }
 
     // 处理用户的选择
@@ -246,10 +259,10 @@
             promptPopup.style.display = 'none';
             inputPopup.style.display = 'block';
         } else if (answer === 'no') {
-            // 关闭提示，返回弧形布局
+            // 关闭弹窗并恢复卡片
             closePopup();
         } else if (answer === 'maybe') {
-            // 保留当前状态，允许用户再次选择
+            // 关闭提示框，保持卡片放大
             promptPopup.style.display = 'none';
             isCardClicked = false;
         }
@@ -280,7 +293,7 @@
         }
     }
 
-    // 关闭弹窗
+    // 关闭弹窗并恢复卡片状态
     function closePopup() {
         const overlay = document.getElementById('overlay');
         const promptPopup = document.getElementById('promptPopup');
@@ -289,9 +302,10 @@
         promptPopup.style.display = 'none';
         inputPopup.style.display = 'none';
 
-        // 恢复图片原状
+        // 恢复卡片到初始状态
         if (currentCard) {
-            currentCard.classList.remove('active', 'expanded');
+            currentCard.classList.remove('active');
+            unhoverCard(currentCard);
         }
 
         // 清空输入框
@@ -300,10 +314,10 @@
         isCardClicked = false;
     }
 
-    // 游戏结束
+    // 结束游戏
     function endGame() {
         // 隐藏所有元素
-        document.getElementById('arcContainer').style.display = 'none';
+        document.getElementById('imageContainer').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('promptPopup').style.display = 'none';
         document.getElementById('inputPopup').style.display = 'none';
@@ -314,7 +328,7 @@
         document.body.appendChild(message);
     }
 
-    window.onload = populateArc;
+    window.onload = populateImages;
 </script>
 
 </body>
