@@ -54,11 +54,8 @@
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
-            width: 60%; /* 保證比圖片小 */
+            width: 60%;
             text-align: center;
-            top: 50%; /* 固定在圖片的中間 */
-            left: 50%; /* 固定在圖片的中間 */
-            transform: translate(-50%, -50%); /* 讓輸入框居中 */
         }
         .input-popup input {
             padding: 5px;
@@ -158,7 +155,7 @@
         });
     }
 
-    // 顯示輸入框，並固定在圖片的正中間
+    // 顯示輸入框，並固定在點選圖片的正上方
     function openPopup(index, imgElement) {
         currentStudent = students[index];
         const popup = document.getElementById('inputPopup');
@@ -172,7 +169,12 @@
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
 
-        // 顯示輸入框
+        // 設定輸入框的位置在圖片上方
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
         popup.style.display = 'block';
     }
 
