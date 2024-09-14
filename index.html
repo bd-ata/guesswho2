@@ -60,6 +60,38 @@
             z-index: 1000;
             display: none;
         }
+        /* 輸入框樣式 */
+        .input-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1002;
+        }
+        .input-popup input {
+            padding: 5px;
+            font-size: 16px;
+            width: 80%;
+            margin-top: 10px;
+        }
+        .input-popup button {
+            padding: 5px 10px;
+            font-size: 16px;
+            margin: 10px 5px 0 5px;
+            cursor: pointer;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-button {
+            background-color: #808080;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -69,6 +101,16 @@
 
 <div class="stack-container" id="stackContainer">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
+</div>
+
+<!-- 遮罩層 -->
+<div id="overlay">
+    <!-- 輸入框 -->
+    <div id="inputPopup" class="input-popup">
+        <p id="popupText">輸入寶貝的名字試試看吧！</p>
+        <input type="text" id="nameInput" placeholder="輸入學生的名字">
+        <button class="submit-button" onclick="checkGuess()">確認送出</button>
+    </div>
 </div>
 
 <script>
@@ -108,6 +150,9 @@
     ];
 
     let isCardClicked = false;
+    let currentCard = null;
+    let currentStudent = null;
+    let attempts = 0;
 
     // 隨機排列圖片
     function shuffle(array) {
@@ -140,36 +185,80 @@
             div.style.setProperty('--zIndex', zIndex);
 
             div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
-            div.onclick = () => openCard(div);
+            div.onclick = () => openCard(div, student);
             container.appendChild(div);
         });
     }
 
     // 點擊圖片時的動畫效果
-    function openCard(card) {
+    function openCard(card, student) {
         if (isCardClicked) return; // 防止多次點擊
         isCardClicked = true;
+        currentCard = card;
+        currentStudent = student;
 
-        // 移除其他卡片
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(c => {
-            if (c !== card) {
-                c.style.display = 'none';
-            }
-        });
-
-        // 顯示遮罩層
-        const overlay = document.createElement('div');
-        overlay.id = 'overlay';
-        document.body.appendChild(overlay);
+        // 顯示遮罩層和輸入框
+        const overlay = document.getElementById('overlay');
+        const popup = document.getElementById('inputPopup');
+        overlay.style.display = 'block';
+        popup.style.display = 'block';
 
         // 將卡片置於最上層並播放動畫
         card.classList.add('active');
+    }
 
-        // 當動畫結束後，移除遮罩層
-        card.addEventListener('transitionend', () => {
-            overlay.style.display = 'none';
-        });
+    // 檢查用戶的猜測
+    function checkGuess() {
+        const guess = document.getElementById('nameInput').value.trim();
+        attempts++;
+
+        if (guess === currentStudent.name) {
+            alert(`恭喜你答對了！總共嘗試了 ${attempts} 次。`);
+            endGame();
+        } else {
+            alert('哎呀！不是喔～再試一次吧！');
+            // 移除當前圖片
+            currentCard.parentNode.removeChild(currentCard);
+            closePopup();
+
+            // 檢查是否還有剩餘圖片
+            const remainingCards = document.querySelectorAll('.card');
+            if (remainingCards.length === 0) {
+                alert(`遊戲結束！總共嘗試了 ${attempts} 次，但沒有找到正確的寶貝。`);
+                endGame();
+            } else {
+                isCardClicked = false;
+            }
+        }
+    }
+
+    // 關閉輸入框
+    function closePopup() {
+        const overlay = document.getElementById('overlay');
+        const popup = document.getElementById('inputPopup');
+        overlay.style.display = 'none';
+        popup.style.display = 'none';
+
+        // 恢復圖片原狀
+        if (currentCard) {
+            currentCard.classList.remove('active');
+        }
+
+        // 清空輸入框
+        document.getElementById('nameInput').value = '';
+    }
+
+    // 遊戲結束
+    function endGame() {
+        // 隱藏所有元素
+        document.getElementById('stackContainer').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('inputPopup').style.display = 'none';
+
+        // 顯示遊戲結束訊息
+        const message = document.createElement('p');
+        message.innerText = `遊戲結束！總共嘗試了 ${attempts} 次。`;
+        document.body.appendChild(message);
     }
 
     window.onload = populateStack;
