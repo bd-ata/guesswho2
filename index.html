@@ -47,28 +47,29 @@
         .active {
             border: 5px solid blue; /* 選中時顯示藍色邊框 */
         }
-        .input-popup {
+        .input-popup, .placement-popup {
             display: none;
             position: absolute;
             background-color: rgba(255, 255, 255, 0.9);
-            padding: 5px;
+            padding: 10px;
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
             width: 60%;
             text-align: center;
         }
-        .input-popup input, .input-popup select {
+        .input-popup input {
             padding: 5px;
             font-size: 14px;
             width: 80%;
             margin-top: 5px;
         }
-        .input-popup button {
+        .input-popup button, .placement-popup button {
             padding: 5px 10px;
             font-size: 14px;
             margin-top: 10px;
             cursor: pointer;
+            margin-right: 5px;
         }
         .submit-button {
             background-color: #4CAF50;
@@ -99,7 +100,7 @@
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以填入姓名來檢核是否猜對喔！</p>
+<p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以選擇分區放置喔！</p>
 
 <div class="grid-container" id="imageGrid">
     <!-- 這裡將由 JavaScript 動態插入圖片 -->
@@ -116,17 +117,23 @@
     </ol>
 </div>
 
-<!-- 輸入框 -->
-<div id="inputPopup" class="input-popup">
-    <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="輸入學生的名字">
+<!-- 分區放置彈出框 -->
+<div id="placementPopup" class="placement-popup">
     <p>是否願意分區放置？</p>
-    <label><input type="radio" name="placement" value="是"> 是</label>
-    <label><input type="radio" name="placement" value="不是"> 不是</label>
-    <label><input type="radio" name="placement" value="考慮中"> 考慮中</label>
+    <button onclick="handlePlacement('是')">是</button>
+    <button onclick="handlePlacement('不是')">不是</button>
+    <button onclick="handlePlacement('考慮中')">考慮中</button>
+    <br>
+    <button class="cancel-button" onclick="closePlacementPopup()">取消</button>
+</div>
+
+<!-- 姓名輸入彈出框 -->
+<div id="inputPopup" class="input-popup">
+    <p id="popupText">輸入寶貝的名字試試看吧</p>
+    <input type="text" id="nameInput" placeholder="輸入學生的名字">
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
-    <button class="cancel-button" onclick="closePopup()">取消輸入</button>
+    <button class="cancel-button" onclick="closeInputPopup()">取消輸入</button>
 </div>
 
 <script>
@@ -169,6 +176,7 @@
     let lastClickedImage = null;
     let totalAttempts = 0;
     let totalSuccesses = 0;
+    let selectedPlacement = '';
 
     // 排行榜數據
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
@@ -200,15 +208,15 @@
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
-            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPopup(${index}, this)">`;
+            div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}" onclick="openPlacementPopup(${index}, this)">`;
             grid.appendChild(div);
         });
     }
 
-    // 顯示輸入框，並固定在點選圖片的正上方
-    function openPopup(index, imgElement) {
+    // 顯示分區放置彈出框
+    function openPlacementPopup(index, imgElement) {
         currentStudent = students[index];
-        const popup = document.getElementById('inputPopup');
+        const popup = document.getElementById('placementPopup');
 
         // 移除上一次點擊的圖片邊框
         if (lastClickedImage) {
@@ -219,7 +227,7 @@
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
 
-        // 設定輸入框的位置在圖片上方
+        // 設定彈出框的位置在圖片上方
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
         const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
@@ -228,30 +236,53 @@
         popup.style.display = 'block';
     }
 
+    // 處理分區放置的選擇
+    function handlePlacement(choice) {
+        selectedPlacement = choice;
+        closePlacementPopup();
+
+        if (choice === '是') {
+            // 如果選擇「是」，則彈出姓名輸入框
+            openInputPopup();
+        } else {
+            alert(`您選擇了「${choice}」`);
+            totalAttempts++;
+            updateStats();
+            closeAllPopups();
+        }
+    }
+
+    // 顯示姓名輸入彈出框
+    function openInputPopup() {
+        const popup = document.getElementById('inputPopup');
+        const imgElement = lastClickedImage;
+
+        // 設定彈出框的位置在圖片上方
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
+        popup.style.display = 'block';
+    }
+
     // 檢查輸入是否正確
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
-        const placementOptions = document.getElementsByName('placement');
-        let selectedPlacement = '';
-        for (const option of placementOptions) {
-            if (option.checked) {
-                selectedPlacement = option.value;
-                break;
-            }
-        }
 
         totalAttempts++;
 
         if (guess === currentStudent.name) {
             totalSuccesses++;
             alert(`恭喜你答對了～\n分區放置選擇：${selectedPlacement}`);
+            updateStats();
+            checkLeaderboard();
         } else {
             alert('哎呀！不是喔～再試一次吧！');
+            updateStats();
         }
 
-        updateStats();
-        checkLeaderboard();
-        closePopup();
+        closeAllPopups();
     }
 
     // 更新嘗試次數和成功次數
@@ -280,20 +311,27 @@
         }
     }
 
-    // 關閉輸入框
-    function closePopup() {
-        document.getElementById('inputPopup').style.display = 'none';
-        document.getElementById('nameInput').value = '';
-        // 重置分區放置選項
-        const placementOptions = document.getElementsByName('placement');
-        for (const option of placementOptions) {
-            option.checked = false;
-        }
+    // 關閉所有彈出框
+    function closeAllPopups() {
+        closeInputPopup();
+        closePlacementPopup();
 
         // 移除圖片邊框
         if (lastClickedImage) {
             lastClickedImage.classList.remove('active');
+            lastClickedImage = null;
         }
+    }
+
+    // 關閉姓名輸入彈出框
+    function closeInputPopup() {
+        document.getElementById('inputPopup').style.display = 'none';
+        document.getElementById('nameInput').value = '';
+    }
+
+    // 關閉分區放置彈出框
+    function closePlacementPopup() {
+        document.getElementById('placementPopup').style.display = 'none';
     }
 
     window.onload = function() {
