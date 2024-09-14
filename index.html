@@ -8,17 +8,19 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            text-align: center;
             overflow: hidden; /* 防止滚动条出现 */
-            position: relative;
+            margin: 0;
+            padding: 0;
         }
         h1 {
             color: #333;
+            text-align: center;
             margin-top: 20px;
         }
         p {
             color: #666;
             font-size: 18px;
+            text-align: center;
             margin-bottom: 20px;
         }
         .image-container {
@@ -39,15 +41,15 @@
             height: 100%;
             border-radius: 8px;
         }
-        /* 悬停效果：旋转回正面并放大 */
+        /* 悬停效果：旋转回正面并放大至全屏 */
         .card:hover {
-            transform: rotate(0deg) scale(1.2);
-            z-index: 1;
+            transform: rotate(0deg) scale(6); /* 放大倍数根据需要调整 */
+            z-index: 2;
         }
         /* 点击后的图片保持放大和正面 */
         .card.active {
-            transform: rotate(0deg) scale(1.2);
-            z-index: 2;
+            transform: rotate(0deg) scale(6);
+            z-index: 3;
         }
         /* 遮罩层 */
         #overlay {
@@ -117,12 +119,49 @@
             background-color: #4CAF50;
             color: white;
         }
+        /* 拋弃区和考虑区 */
+        .discard-area, .maybe-area {
+            position: absolute;
+            top: 0;
+            width: 50px;
+            height: 100%;
+            background-color: rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .discard-area {
+            left: 0;
+        }
+        .maybe-area {
+            right: 0;
+        }
+        .area-card {
+            width: 50px;
+            height: 75px;
+            margin: 5px auto;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+        .area-card img {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>點選圖片來看看這是不是你們家寶貝～</p>
+<p>滑動圖片放大，點擊圖片選擇是否是您的寶貝～</p>
+
+<!-- 拋弃区 -->
+<div class="discard-area" id="discardArea">
+    <p style="text-align:center;">拋弃區</p>
+</div>
+
+<!-- 考虑区 -->
+<div class="maybe-area" id="maybeArea">
+    <p style="text-align:center;">考慮區</p>
+</div>
 
 <div class="image-container" id="imageContainer">
     <!-- 这里将由 JavaScript 动态插入图片 -->
@@ -219,8 +258,8 @@
     // 悬停效果：旋转回正面并放大
     function hoverCard(card) {
         if (isCardClicked) return; // 如果已经点击了卡片，什么都不做
-        card.style.transform = 'rotate(0deg) scale(1.2)';
-        card.style.zIndex = '1';
+        card.style.transform = 'rotate(0deg) scale(6)'; // 放大倍数根据需要调整
+        card.style.zIndex = '2';
     }
 
     // 恢复卡片到初始状态
@@ -259,13 +298,59 @@
             promptPopup.style.display = 'none';
             inputPopup.style.display = 'block';
         } else if (answer === 'no') {
-            // 关闭弹窗并恢复卡片
+            // 移动图片到拋弃区
+            moveToArea(currentCard, 'discardArea');
             closePopup();
         } else if (answer === 'maybe') {
-            // 关闭提示框，保持卡片放大
-            promptPopup.style.display = 'none';
-            isCardClicked = false;
+            // 移动图片到考虑区
+            moveToArea(currentCard, 'maybeArea');
+            closePopup();
         }
+    }
+
+    // 移动图片到指定区域
+    function moveToArea(card, areaId) {
+        const area = document.getElementById(areaId);
+        const areaCard = document.createElement('div');
+        areaCard.className = 'area-card';
+        areaCard.innerHTML = card.innerHTML;
+        areaCard.onclick = () => restoreCard(areaCard, areaId);
+        area.appendChild(areaCard);
+
+        // 从主容器中移除
+        card.parentNode.removeChild(card);
+    }
+
+    // 从区域恢复图片到主容器
+    function restoreCard(areaCard, areaId) {
+        const area = document.getElementById(areaId);
+        const studentIndex = parseInt(areaCard.querySelector('img').alt.replace('Student ', '')) - 1;
+        const student = students[studentIndex];
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = areaCard.innerHTML;
+        card.onmouseenter = () => hoverCard(card);
+        card.onmouseleave = () => unhoverCard(card);
+        card.onclick = () => openCard(card, student);
+
+        // 随机位置
+        const container = document.getElementById('imageContainer');
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const posX = Math.random() * (containerWidth - 150);
+        const posY = Math.random() * (containerHeight - 225);
+        const rotation = (Math.random() * 60 - 30);
+
+        card.style.left = `${posX}px`;
+        card.style.top = `${posY}px`;
+        card.style.transform = `rotate(${rotation}deg)`;
+        card.dataset.rotation = rotation;
+
+        container.appendChild(card);
+
+        // 从区域中移除
+        area.removeChild(areaCard);
     }
 
     // 检查用户的猜测
@@ -278,18 +363,8 @@
             endGame();
         } else {
             alert('哎呀！不是喔～再試一次吧！');
-            // 移除当前图片
-            currentCard.parentNode.removeChild(currentCard);
             closePopup();
-
-            // 检查是否还有剩余图片
-            const remainingCards = document.querySelectorAll('.card');
-            if (remainingCards.length === 0) {
-                alert(`遊戲結束！總共嘗試了 ${attempts} 次，但沒有找到正確的寶貝。`);
-                endGame();
-            } else {
-                isCardClicked = false;
-            }
+            isCardClicked = false;
         }
     }
 
@@ -321,6 +396,8 @@
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('promptPopup').style.display = 'none';
         document.getElementById('inputPopup').style.display = 'none';
+        document.getElementById('discardArea').style.display = 'none';
+        document.getElementById('maybeArea').style.display = 'none';
 
         // 显示游戏结束信息
         const message = document.createElement('p');
