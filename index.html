@@ -2,31 +2,22 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五年一班猜猜我是誰</title>
     <style>
+        /* 全局样式 */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            overflow: hidden; /* 防止滚动条出现 */
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        h1 {
-            color: #333;
+        h1, p {
             text-align: center;
-            margin-top: 20px;
-        }
-        p {
-            color: #666;
-            font-size: 18px;
-            text-align: center;
-            margin-bottom: 20px;
         }
         .image-container {
             position: relative;
             width: 100%;
-            height: calc(100vh - 150px); /* 调整以适应标题和描述的高度 */
+            height: calc(100vh - 150px);
             overflow: hidden;
         }
         .card {
@@ -35,20 +26,27 @@
             height: 225px;
             cursor: pointer;
             transition: transform 0.3s ease-in-out;
+            transform-origin: center center;
         }
         .card img {
             width: 100%;
             height: 100%;
             border-radius: 8px;
         }
-        /* 悬停效果：旋转回正面并放大至全屏 */
-        .card:hover {
-            transform: rotate(0deg) scale(6); /* 放大倍数根据需要调整 */
-            z-index: 2;
+        /* 悬停效果：仅在桌面设备上有效 */
+        @media (hover: hover) and (pointer: fine) {
+            .card:hover {
+                transform: translate(-50%, -50%) scale(2);
+                top: 50%;
+                left: 50%;
+                z-index: 2;
+            }
         }
-        /* 点击后的图片保持放大和正面 */
-        .card.active {
-            transform: rotate(0deg) scale(6);
+        /* 点击后的图片保持放大和居中 */
+        .card.enlarged {
+            transform: translate(-50%, -50%) scale(2);
+            top: 50%;
+            left: 50%;
             z-index: 3;
         }
         /* 遮罩层 */
@@ -119,8 +117,8 @@
             background-color: #4CAF50;
             color: white;
         }
-        /* 拋弃区和考虑区 */
-        .discard-area, .maybe-area {
+        /* 拋棄區和考慮區样式 */
+        .area {
             position: absolute;
             top: 0;
             width: 50px;
@@ -151,15 +149,15 @@
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>滑動圖片放大，點擊圖片選擇是否是您的寶貝～</p>
+<p>在電腦上，滑鼠滑過圖片放大，點擊圖片選擇。<br>在手機和平板上，點擊圖片放大，再次點擊圖片選擇。</p>
 
-<!-- 拋弃区 -->
-<div class="discard-area" id="discardArea">
-    <p style="text-align:center;">拋弃區</p>
+<!-- 拋棄區 -->
+<div class="area discard-area" id="discardArea">
+    <p style="text-align:center;">不適區</p>
 </div>
 
-<!-- 考虑区 -->
-<div class="maybe-area" id="maybeArea">
+<!-- 考慮區 -->
+<div class="area maybe-area" id="maybeArea">
     <p style="text-align:center;">考慮區</p>
 </div>
 
@@ -188,42 +186,18 @@
     const students = [
         {image: 'guess01.jpg', name: '周筠棋'},
         {image: 'guess02.jpg', name: '徐浩鈞'},
-        {image: 'guess03.jpg', name: '朱品睿'},
-        {image: 'guess04.jpg', name: '黃澔祤'},
-        {image: 'guess05.jpg', name: '歐宸嘉'},
-        {image: 'guess06.jpg', name: '黃煜程'},
-        {image: 'guess07.jpg', name: '詹運生'},
-        {image: 'guess08.jpg', name: '陳勁瑜'},
-        {image: 'guess09.jpg', name: '林則佐'},
-        {image: 'guess10.jpg', name: '林則佑'},
-        {image: 'guess11.jpg', name: '周兆員'},
-        {image: 'guess12.jpg', name: '廖淯翔'},
-        {image: 'guess13.jpg', name: '陳柏安'},
-        {image: 'guess14.jpg', name: '張幃睿'},
-        {image: 'guess15.jpg', name: '闕芷榕'},
-        {image: 'guess16.jpg', name: '張子晴'},
-        {image: 'guess17.jpg', name: '羅璽恩'},
-        {image: 'guess18.jpg', name: '朱采彤'},
-        {image: 'guess19.jpg', name: '高婧'},
-        {image: 'guess20.jpg', name: '吳欣穎'},
-        {image: 'guess21.jpg', name: '黃暐霓'},
-        {image: 'guess22.jpg', name: '韋欣圻'},
-        {image: 'guess23.jpg', name: '邱琝容'},
-        {image: 'guess24.jpg', name: '黃宇晨'},
-        {image: 'guess25.jpg', name: '黃昱馷'},
-        {image: 'guess26.jpg', name: '李孟軒'},
-        {image: 'guess27.jpg', name: '劉萱綺'},
-        {image: 'guess28.jpg', name: '劉芷晴'},
-        {image: 'guess29.jpg', name: '王心儀'},
-        {image: 'guess30.jpg', name: '張瑀航'},
-        {image: 'guess31.jpg', name: '陳湘晴'},
-        {image: 'guess32.jpg', name: '傅禹童'}
+        // ...请保留原始的学生列表
     ];
 
     let isCardClicked = false;
     let currentCard = null;
     let currentStudent = null;
     let attempts = 0;
+
+    // 判断是否为移动设备
+    function isMobileDevice() {
+        return /Mobi|Android|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent);
+    }
 
     // 动态生成随机散落的图片
     function populateImages() {
@@ -248,38 +222,70 @@
             div.dataset.rotation = rotation; // 存储初始旋转角度
 
             div.innerHTML = `<img src="${student.image}" alt="Student ${index + 1}">`;
-            div.onmouseenter = () => hoverCard(div);
-            div.onmouseleave = () => unhoverCard(div);
-            div.onclick = () => openCard(div, student);
+
+            if (isMobileDevice()) {
+                // 移动设备：点击一次放大，再次点击弹出选择框
+                div.onclick = () => {
+                    if (!div.classList.contains('enlarged')) {
+                        enlargeCard(div, student);
+                    } else {
+                        openCard(div, student);
+                    }
+                };
+            } else {
+                // 桌面设备：鼠标悬停放大，点击弹出选择框
+                div.onmouseenter = () => hoverCard(div);
+                div.onmouseleave = () => unhoverCard(div);
+                div.onclick = () => openCard(div, student);
+            }
+
             container.appendChild(div);
         });
     }
 
-    // 悬停效果：旋转回正面并放大
+    // 桌面设备悬停效果：旋转回正面并放大居中
     function hoverCard(card) {
-        if (isCardClicked) return; // 如果已经点击了卡片，什么都不做
-        card.style.transform = 'rotate(0deg) scale(6)'; // 放大倍数根据需要调整
+        if (isCardClicked) return;
+        card.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(2)';
+        card.style.top = '50%';
+        card.style.left = '50%';
         card.style.zIndex = '2';
     }
 
     // 恢复卡片到初始状态
     function unhoverCard(card) {
-        if (isCardClicked) return; // 如果已经点击了卡片，什么都不做
-        // 恢复初始旋转角度和大小
+        if (isCardClicked) return;
         const originalRotation = card.dataset.rotation || '0';
-        card.style.transform = `rotate(${originalRotation}deg) scale(1)`;
+        card.style.transform = `rotate(${originalRotation}deg)`;
+        card.style.top = '';
+        card.style.left = '';
         card.style.zIndex = '';
+    }
+
+    // 移动设备：放大卡片到居中
+    function enlargeCard(card, student) {
+        currentCard = card;
+        currentStudent = student;
+        card.classList.add('enlarged');
+        card.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(2)';
+        card.style.top = '50%';
+        card.style.left = '50%';
+        card.style.zIndex = '2';
     }
 
     // 当点击卡片时
     function openCard(card, student) {
-        if (isCardClicked) return; // 防止多次点击
+        if (isCardClicked) return;
         isCardClicked = true;
         currentCard = card;
         currentStudent = student;
 
         // 保持卡片放大和正面
-        card.classList.add('active');
+        card.classList.add('enlarged');
+        card.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(2)';
+        card.style.top = '50%';
+        card.style.left = '50%';
+        card.style.zIndex = '3';
 
         // 显示遮罩层和提示框
         const overlay = document.getElementById('overlay');
@@ -298,11 +304,11 @@
             promptPopup.style.display = 'none';
             inputPopup.style.display = 'block';
         } else if (answer === 'no') {
-            // 移动图片到拋弃区
+            // 移动图片到拋棄區
             moveToArea(currentCard, 'discardArea');
             closePopup();
         } else if (answer === 'maybe') {
-            // 移动图片到考虑区
+            // 移动图片到考慮區
             moveToArea(currentCard, 'maybeArea');
             closePopup();
         }
@@ -314,7 +320,10 @@
         const areaCard = document.createElement('div');
         areaCard.className = 'area-card';
         areaCard.innerHTML = card.innerHTML;
-        areaCard.onclick = () => restoreCard(areaCard, areaId);
+        areaCard.onclick = () => {
+            // 点击区域内的卡片，翻转并进行选择
+            restoreCard(areaCard, areaId);
+        };
         area.appendChild(areaCard);
 
         // 从主容器中移除
@@ -330,23 +339,31 @@
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = areaCard.innerHTML;
-        card.onmouseenter = () => hoverCard(card);
-        card.onmouseleave = () => unhoverCard(card);
-        card.onclick = () => openCard(card, student);
+        card.dataset.rotation = '0';
 
-        // 随机位置
+        if (isMobileDevice()) {
+            // 移动设备：点击一次放大，再次点击弹出选择框
+            card.onclick = () => {
+                if (!card.classList.contains('enlarged')) {
+                    enlargeCard(card, student);
+                } else {
+                    openCard(card, student);
+                }
+            };
+        } else {
+            // 桌面设备：鼠标悬停放大，点击弹出选择框
+            card.onmouseenter = () => hoverCard(card);
+            card.onmouseleave = () => unhoverCard(card);
+            card.onclick = () => openCard(card, student);
+        }
+
+        // 放置在屏幕中央
+        card.style.left = '50%';
+        card.style.top = '50%';
+        card.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+        card.style.zIndex = '1';
+
         const container = document.getElementById('imageContainer');
-        const containerWidth = container.offsetWidth;
-        const containerHeight = container.offsetHeight;
-        const posX = Math.random() * (containerWidth - 150);
-        const posY = Math.random() * (containerHeight - 225);
-        const rotation = (Math.random() * 60 - 30);
-
-        card.style.left = `${posX}px`;
-        card.style.top = `${posY}px`;
-        card.style.transform = `rotate(${rotation}deg)`;
-        card.dataset.rotation = rotation;
-
         container.appendChild(card);
 
         // 从区域中移除
@@ -379,7 +396,7 @@
 
         // 恢复卡片到初始状态
         if (currentCard) {
-            currentCard.classList.remove('active');
+            currentCard.classList.remove('enlarged');
             unhoverCard(currentCard);
         }
 
