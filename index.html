@@ -32,7 +32,7 @@
         }
         /* 棄置區和考慮區 */
         #discardArea, #considerArea {
-            width: 20%;
+            width: 15%;
             min-height: 500px;
             background-color: #e0e0e0;
             padding: 10px;
@@ -43,7 +43,7 @@
         }
         /* 主要圖片區域 */
         #imageGrid {
-            width: 55%;
+            width: 65%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-gap: 20px;
@@ -63,7 +63,6 @@
         }
         .grid-item img:hover {
             transform: scale(1.1);
-            border: 2px solid #ff5722;
         }
         .active {
             border: 5px solid blue;
@@ -278,8 +277,7 @@
             mainGridImages.push({student: student, element: div});
 
             // 事件監聽
-            div.addEventListener('mouseenter', () => openPlacementPopup(student, div));
-            div.addEventListener('mouseleave', () => closePlacementPopup());
+            div.addEventListener('click', () => openPlacementPopup(student, div));
         });
     }
 
@@ -396,8 +394,7 @@
             if (index > -1) {
                 const imageItem = mainGridImages.splice(index, 1)[0];
                 imageItem.element.classList.remove('active');
-                imageItem.element.addEventListener('mouseenter', () => openPlacementPopup(currentStudent, imageItem.element));
-                imageItem.element.addEventListener('mouseleave', () => closePlacementPopup());
+                imageItem.element.addEventListener('click', () => openPlacementPopup(currentStudent, imageItem.element));
                 imageItem.element.style.transform = 'scale(0.8)'; // 縮小圖片
                 targetArea.appendChild(imageItem.element);
                 targetArray.push(imageItem);
