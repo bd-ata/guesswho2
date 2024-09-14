@@ -123,11 +123,10 @@
         {image: 'guess31.jpg', name: '陳湘晴'},
         {image: 'guess32.jpg', name: '傅禹童'}
     ];
-</script>
-
 
     let currentStudent = null;
 
+    // Shuffle the images array
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -136,9 +135,10 @@
         return array;
     }
 
+    // Populate the grid with shuffled images
     function populateGrid() {
         const grid = document.getElementById('imageGrid');
-        const shuffledStudents = shuffle(students);
+        const shuffledStudents = shuffle(students); // Shuffle the student array
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
@@ -147,17 +147,23 @@
         });
     }
 
+    // Open the input popup for a specific student and position it near the clicked image
     function openPopup(index, imgElement) {
         currentStudent = students[index];
         const popup = document.getElementById('inputPopup');
+        
+        // Get the image position and size
         const rect = imgElement.getBoundingClientRect();
-        const x = rect.right + 10;
-        const y = rect.top + window.scrollY;
+        const x = rect.right + 10; // Position the popup to the right of the image
+        const y = rect.top + window.scrollY; // Ensure correct vertical position with scrolling
+        
+        // Set popup position and display
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
     }
 
+    // Check if the guess is correct
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
         if (guess === currentStudent.name) {
@@ -168,6 +174,7 @@
         closePopup();
     }
 
+    // Close the input popup
     function closePopup() {
         document.getElementById('inputPopup').style.display = 'none';
         document.getElementById('nameInput').value = '';
