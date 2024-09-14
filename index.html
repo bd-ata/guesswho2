@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,7 +44,7 @@
             z-index: 10;
         }
         .active {
-            border: 5px solid blue;
+            border: 5px solid blue; /* 選中時顯示藍色邊框 */
         }
         .input-popup {
             display: none;
@@ -54,15 +54,16 @@
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
-            width: 60%; /* Smaller width than the enlarged image */
+            width: 60%; /* 保證比圖片小 */
             text-align: center;
-            left: 50%; /* Center horizontally */
-            transform: translateX(-50%); /* Adjust for centering */
+            top: 50%; /* 固定在圖片的中間 */
+            left: 50%; /* 固定在圖片的中間 */
+            transform: translate(-50%, -50%); /* 讓輸入框居中 */
         }
         .input-popup input {
             padding: 5px;
             font-size: 14px;
-            width: 80%; /* Smaller than the popup width */
+            width: 80%;
         }
         .input-popup button {
             padding: 5px 10px;
@@ -86,13 +87,13 @@
 <p>點選圖片放大來看猜猜看這是不是你們家寶貝～點一下就可以填入姓名來檢核是否猜對喔！</p>
 
 <div class="grid-container" id="imageGrid">
-    <!-- Images will be inserted here by JavaScript -->
+    <!-- 這裡將由 JavaScript 動態插入圖片 -->
 </div>
 
-<!-- Input popup -->
+<!-- 輸入框 -->
 <div id="inputPopup" class="input-popup">
     <p id="popupText">就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="Enter student's name">
+    <input type="text" id="nameInput" placeholder="輸入學生的名字">
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
     <button class="cancel-button" onclick="closePopup()">取消輸入</button>
 </div>
@@ -136,7 +137,7 @@
     let currentStudent = null;
     let lastClickedImage = null;
 
-    // Shuffle the images array
+    // 隨機排列圖片
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -145,10 +146,10 @@
         return array;
     }
 
-    // Populate the grid with shuffled images
+    // 動態生成圖片
     function populateGrid() {
         const grid = document.getElementById('imageGrid');
-        const shuffledStudents = shuffle(students); // Shuffle the student array
+        const shuffledStudents = shuffle(students); // 打亂順序
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
@@ -157,30 +158,25 @@
         });
     }
 
-    // Open the input popup for a specific student and position it directly above the clicked image
+    // 顯示輸入框，並固定在圖片的正中間
     function openPopup(index, imgElement) {
         currentStudent = students[index];
         const popup = document.getElementById('inputPopup');
 
-        // Remove border from last clicked image
+        // 移除上一次點擊的圖片邊框
         if (lastClickedImage) {
             lastClickedImage.classList.remove('active');
         }
 
-        // Add border to the clicked image
+        // 加上藍色邊框
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
 
-        // Set popup position directly on top of the image
-        const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2); // Center
-        const y = rect.top + window.scrollY + rect.height / 2 - popup.offsetHeight / 2; // Position exactly above the image
-        popup.style.top = `${y}px`;
-        popup.style.left = `${x}px`;
+        // 顯示輸入框
         popup.style.display = 'block';
     }
 
-    // Check if the guess is correct
+    // 檢查輸入是否正確
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
         if (guess === currentStudent.name) {
@@ -191,12 +187,12 @@
         closePopup();
     }
 
-    // Close the input popup
+    // 關閉輸入框
     function closePopup() {
         document.getElementById('inputPopup').style.display = 'none';
         document.getElementById('nameInput').value = '';
 
-        // Remove active border from the image
+        // 移除圖片邊框
         if (lastClickedImage) {
             lastClickedImage.classList.remove('active');
         }
