@@ -82,27 +82,28 @@
             border: 5px solid blue;
         }
         /* 彈出框樣式 */
-        .input-popup, .placement-popup {
+        .input-popup, .placement-popup, .password-popup {
             display: none;
             position: absolute;
             background-color: rgba(255, 255, 255, 0.95);
-            padding: 10px;
+            padding: 20px;
             border-radius: 5px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 100;
-            width: 200px;
+            width: 250px;
             text-align: center;
         }
-        .input-popup input {
-            padding: 5px;
+        .input-popup input, .password-popup input {
+            padding: 10px;
             font-size: 14px;
             width: 90%;
-            margin-top: 5px;
-        }
-        .input-popup button, .placement-popup button {
-            padding: 5px 10px;
-            font-size: 14px;
             margin-top: 10px;
+            box-sizing: border-box;
+        }
+        .input-popup button, .placement-popup button, .password-popup button {
+            padding: 10px 15px;
+            font-size: 14px;
+            margin-top: 15px;
             cursor: pointer;
             margin-right: 5px;
             border: none;
@@ -124,6 +125,10 @@
         .consider-button {
             background-color: yellow;
             color: black;
+        }
+        .password-submit-button {
+            background-color: #008CBA;
+            color: white;
         }
         /* 排行榜的樣式 */
         #leaderboard {
@@ -215,13 +220,28 @@
                 opacity: 0;
             }
         }
+
+        /* 密碼彈出框遮罩 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
     </style>
 </head>
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
+<!-- 刪除了指導文字 -->
+<!--
 <p>點選圖片放大來看猜猜看這是不是您家寶貝～點一下就可以選擇喔！</p>
-<p>我們有稍微增加難度～不是認字跡就可以囉😂</p> <!-- 新增的指導小字 -->
+<p>我們有稍微增加難度～不是認字跡就可以囉😂</p>
+-->
 
 <!-- 主容器 -->
 <div class="main-container">
@@ -269,7 +289,7 @@
 <!-- 排行榜 -->
 <div id="leaderboard">
     <h2>排行榜</h2>
-    <button onclick="clearLeaderboard()">清空排行榜</button>
+    <button onclick="openPasswordPopup()">清空排行榜</button>
     <ol id="leaderboardList">
         <!-- 排行榜內容將由 JavaScript 動態插入 -->
     </ol>
@@ -290,6 +310,19 @@
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
 </div>
+
+<!-- 密碼輸入彈出框 -->
+<div class="modal-overlay" id="passwordOverlay"></div>
+<div id="passwordPopup" class="password-popup">
+    <p>請輸入密碼以清空排行榜：</p>
+    <input type="password" id="passwordInput" placeholder="輸入密碼">
+    <br>
+    <button class="password-submit-button" onclick="submitPassword()">確認</button>
+    <button class="password-submit-button" onclick="closePasswordPopup()">取消</button>
+</div>
+
+<!-- 歡呼聲音頻 -->
+<audio id="cheerAudio" src="https://www.soundjay.com/human/sounds/applause-01.mp3" preload="auto"></audio> <!-- 您可以替換為您喜歡的音頻URL -->
 
 <script>
     const students = [
@@ -355,14 +388,28 @@
         });
     }
 
-    // 清空排行榜（加入密碼ata999）
-    function clearLeaderboard() {
-        const password = prompt('請輸入密碼以清空排行榜：');
+    // 打開密碼輸入彈出框
+    function openPasswordPopup() {
+        document.getElementById('passwordOverlay').style.display = 'block';
+        document.getElementById('passwordPopup').style.display = 'block';
+    }
+
+    // 關閉密碼輸入彈出框
+    function closePasswordPopup() {
+        document.getElementById('passwordOverlay').style.display = 'none';
+        document.getElementById('passwordPopup').style.display = 'none';
+        document.getElementById('passwordInput').value = '';
+    }
+
+    // 提交密碼
+    function submitPassword() {
+        const password = document.getElementById('passwordInput').value;
         if (password === 'ata999') {
             localStorage.removeItem('leaderboard');
             leaderboard = [];
             updateLeaderboard();
             alert('排行榜已清空');
+            closePasswordPopup();
         } else {
             alert('密碼錯誤，無法清空排行榜');
         }
@@ -464,7 +511,10 @@
         }
 
         if (guess === currentStudent.name) {
-            launchConfetti(); // 立即啟動彩帶動畫
+            // 立即啟動彩帶動畫
+            launchConfetti();
+            // 播放歡呼聲
+            document.getElementById('cheerAudio').play();
             setTimeout(() => {
                 alert(`恭喜你答對了～`);
                 totalSuccesses++;
@@ -602,12 +652,6 @@
     function closeAllPopups() {
         closeInputPopup();
         closePlacementPopup();
-
-        // 移除圖片邊框
-        if (lastClickedImage) {
-            lastClickedImage.classList.remove('active');
-            lastClickedImage = null;
-        }
     }
 
     // 關閉姓名輸入彈出框
