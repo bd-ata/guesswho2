@@ -221,6 +221,7 @@
 
 <h1>五年一班猜猜我是誰</h1>
 <p>點選圖片放大來看猜猜看這是不是您家寶貝～點一下就可以選擇喔！</p>
+<p>我們有稍微增加難度～不是認字跡就可以囉😂</p> <!-- 新增的指導小字 -->
 
 <!-- 主容器 -->
 <div class="main-container">
@@ -284,8 +285,8 @@
 
 <!-- 姓名輸入彈出框 -->
 <div id="inputPopup" class="input-popup">
-    <p>就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="輸入學生的名字">
+    <p>就決定是這張了嗎？輸入您家寶貝的全名試試看吧</p> <!-- 修改提示文字 -->
+    <input type="text" id="nameInput" placeholder="輸入您家寶貝的全名"> <!-- 修改 placeholder -->
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
 </div>
@@ -458,19 +459,22 @@
         const guess = document.getElementById('nameInput').value.trim();
 
         if (guess === '') {
-            alert('請輸入學生的名字');
+            alert('請輸入您家寶貝的全名');
             return;
         }
 
         if (guess === currentStudent.name) {
-            totalSuccesses++;
-            alert(`恭喜你答對了～`);
-            updateStats();
-            checkLeaderboard();
-            // 移除圖片
-            removeImageFromMainGrid();
-            // 遊戲結束，進入成績揭曉區
-            endGame();
+            launchConfetti(); // 立即啟動彩帶動畫
+            setTimeout(() => {
+                alert(`恭喜你答對了～`);
+                totalSuccesses++;
+                updateStats();
+                checkLeaderboard();
+                // 移除圖片
+                removeImageFromMainGrid();
+                // 遊戲結束，進入成績揭曉區
+                endGame();
+            }, 100); // 延遲100毫秒以確保彩帶動畫能被觸發
         } else {
             alert('哎呀！不是喔～再試一次吧！');
             // 直接將圖片移到排除區
