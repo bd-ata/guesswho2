@@ -236,7 +236,7 @@
 <!-- 姓名輸入彈出框 -->
 <div id="inputPopup" class="input-popup">
     <p>就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="輸入學生的名字">
+    <input type="text" id="nameInput" placeholder="輸入您家寶貝的全名">
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
 </div>
@@ -244,7 +244,7 @@
 <!-- 改變心意提示彈出框 -->
 <div id="changeMindPopup" class="change-mind-popup">
     <p>改變心意了嗎？按下按鈕將圖片放回原位吧</p>
-    <button class="return-button" onclick="moveBackToMain()">將圖片放回原位</button>
+    <button class="return-button" onclick="moveBackToMain(event)">將圖片放回原位</button>
 </div>
 
 <script>
@@ -478,7 +478,8 @@
 
     // 添加點擊事件監聽器，顯示提示框
     function addChangeMindEvent(imageItem) {
-        imageItem.element.addEventListener('click', () => {
+        imageItem.element.addEventListener('click', (event) => {
+            event.stopPropagation();
             showChangeMindPopup(imageItem);
         });
     }
@@ -497,7 +498,8 @@
     }
 
     // 將圖片移回主區域
-    function moveBackToMain() {
+    function moveBackToMain(event) {
+        if (event) event.stopPropagation();
         if (!currentImageItem) return;
         const imageItem = currentImageItem;
         currentImageItem = null;
@@ -509,12 +511,13 @@
         mainGridImages.push(imageItem);
         document.getElementById('imageGrid').appendChild(imageItem.element);
 
-        // 移除事件監聽器，重新添加點擊事件
-        imageItem.element.onclick = () => {
+        // 移除事件監聽器，重新添加點擊事件，但不彈出「這是您家寶貝嗎？」彈出框
+        imageItem.element.onclick = null; // 移除之前的監聽器
+        imageItem.element.addEventListener('click', (event) => {
             totalViews++; // 增加查看張數
             updateStats();
-            openPlacementPopup(imageItem.student, imageItem.element);
-        };
+            // 不再彈出「這是您家寶貝嗎？」彈出框
+        });
 
         // 關閉提示框
         closeChangeMindPopup();
