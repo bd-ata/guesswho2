@@ -70,8 +70,7 @@
         }
         /* 放大效果僅在支援滑鼠懸停的裝置上啟用 */
         @media (hover: hover) {
-            .grid-item img:hover,
-            .grid-item.enlarged img {
+            .grid-item img:hover {
                 transform: scale(1.3); /* 放大130% */
                 border: 5px solid #ff5722; /* 加上色框 */
                 z-index: 10;
@@ -152,7 +151,7 @@
             height: 100%;
             pointer-events: none;
         }
-        /* Input Popup */
+        /* 提問框樣式 */
         .input-popup {
             position: fixed;
             background-color: rgba(255, 255, 255, 0.95);
@@ -161,6 +160,53 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 1001;
             display: none;
+        }
+        /* 按鈕樣式 */
+        .input-popup button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-yes {
+            background-color: green;
+            color: white;
+        }
+        .btn-no {
+            background-color: red;
+            color: white;
+        }
+        .btn-consider {
+            background-color: yellow;
+            color: black;
+        }
+        /* 輸入姓名彈出框 */
+        #namePopup {
+            display: none;
+            position: fixed;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1002;
+            text-align: center;
+        }
+        #namePopup input {
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+        #namePopup button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -206,6 +252,22 @@
     <input type="password" id="passwordInput" placeholder="輸入密碼">
     <br>
     <button class="submit-button" onclick="verifyPassword()">確認</button>
+</div>
+
+<!-- 提問框（是、不是、考慮中） -->
+<div id="inputPopup" class="input-popup">
+    <p>這是您的寶貝嗎？</p>
+    <button class="btn-yes" onclick="handleGuess(true)">是</button>
+    <button class="btn-no" onclick="handleGuess(false)">不是</button>
+    <button class="btn-consider" onclick="handleGuess('consider')">考慮中</button>
+</div>
+
+<!-- 輸入姓名彈出框 -->
+<div id="namePopup">
+    <p>請輸入您的姓名以確認猜測：</p>
+    <input type="text" id="nameInput" placeholder="輸入姓名">
+    <br>
+    <button onclick="checkGuess()">確認</button>
 </div>
 
 <!-- 成績揭曉區 -->
@@ -332,67 +394,107 @@
 
         correctStudent = student; // 記錄被點擊的學生
 
-        // 創建提問框
-        const popup = document.createElement('div');
-        popup.className = 'input-popup';
-        popup.innerHTML = `
-            <p>這是你的寶貝嗎？</p>
-            <button onclick="handleGuess(true, '${student.name}')">是</button>
-            <button onclick="handleGuess(false, '${student.name}')">不是</button>
-            <button onclick="handleGuess('consider', '${student.name}')">考慮中</button>
-        `;
-        document.body.appendChild(popup);
+        // 顯示提問框
+        const inputPopup = document.getElementById('inputPopup');
+        inputPopup.style.display = 'block';
 
         // 計算圖片的位置，將提問框放在圖片正中間
         const rect = element.getBoundingClientRect();
-        const popupWidth = popup.offsetWidth;
-        const popupHeight = popup.offsetHeight;
+        const popupWidth = inputPopup.offsetWidth;
+        const popupHeight = inputPopup.offsetHeight;
         const top = rect.top + window.scrollY + (rect.height / 2) - (popupHeight / 2);
         const left = rect.left + window.scrollX + (rect.width / 2) - (popupWidth / 2);
-        popup.style.top = `${top}px`;
-        popup.style.left = `${left}px`;
-        popup.style.display = 'block';
+        inputPopup.style.top = `${top}px`;
+        inputPopup.style.left = `${left}px`;
 
         // 點擊外部關閉提問框
         window.onclick = function(event) {
-            if (event.target == popup) {
-                popup.remove();
+            if (event.target == inputPopup) {
+                inputPopup.style.display = 'none';
             }
         }
     }
 
     // 處理猜測
-    function handleGuess(answer, studentName) {
-        attemptCount++;
-        updateStats();
-
+    function handleGuess(answer) {
         if (answer === true) {
+            // 顯示輸入姓名彈出框
+            const namePopup = document.getElementById('namePopup');
+            namePopup.style.display = 'block';
+
+            // 定位彈出框在圖片正中間
+            const gridItem = findGridItemByName(correctStudent.name);
+            if (gridItem) {
+                const rect = gridItem.getBoundingClientRect();
+                const popupWidth = namePopup.offsetWidth;
+                const popupHeight = namePopup.offsetHeight;
+                const top = rect.top + window.scrollY + (rect.height / 2) - (popupHeight / 2);
+                const left = rect.left + window.scrollX + (rect.width / 2) - (popupWidth / 2);
+                namePopup.style.top = `${top}px`;
+                namePopup.style.left = `${left}px`;
+            }
+        } else if (answer === false) {
+            // 錯誤，將圖片移至棄置區
+            moveImageToArea(correctStudent.name, 'discard');
+            alert('哎呀！不是喔～再試一次吧！');
+            attemptCount++;
+            updateStats();
+        } else if (answer === 'consider') {
+            // 考慮中，將圖片移至考慮區
+            moveImageToArea(correctStudent.name, 'consider');
+            alert('圖片已移至考慮區。');
+            attemptCount++;
+            updateStats();
+        }
+
+        // 隱藏提問框
+        const inputPopup = document.getElementById('inputPopup');
+        inputPopup.style.display = 'none';
+    }
+
+    // 查找指定姓名的圖片元素
+    function findGridItemByName(name) {
+        const grids = ['imageGrid', 'discardGrid', 'considerGrid'];
+        for (let gridId of grids) {
+            const grid = document.getElementById(gridId);
+            const imgs = grid.getElementsByTagName('img');
+            for (let img of imgs) {
+                if (img.alt === `Student ${students.findIndex(s => s.name === name) + 1}` || img.alt === name) {
+                    return img.parentElement;
+                }
+            }
+        }
+        return null;
+    }
+
+    // 檢查猜測
+    function checkGuess() {
+        const guess = document.getElementById('nameInput').value.trim();
+
+        if (guess === correctStudent.name) {
             // 正確猜對，更新排行榜
-            const existingEntryIndex = leaderboard.findIndex(entry => entry.name === studentName);
+            const existingEntryIndex = leaderboard.findIndex(entry => entry.name === guess);
             if (existingEntryIndex !== -1) {
                 leaderboard[existingEntryIndex].successes++;
                 leaderboard[existingEntryIndex].yesAttempts++;
             } else {
-                leaderboard.push({name: studentName, successes: 1, yesAttempts: 1});
+                leaderboard.push({name: guess, successes: 1, yesAttempts: 1});
             }
             alert('恭喜你答對了～');
+
             updateLeaderboard();
             endGame();
-        } else if (answer === false) {
-            // 錯誤，將圖片移至棄置區
-            moveImageToArea(studentName, 'discard');
-            alert('哎呀！不是喔～再試一次吧！');
-        } else if (answer === 'consider') {
-            // 考慮中，將圖片移至考慮區
-            moveImageToArea(studentName, 'consider');
-            alert('圖片已移至考慮區。');
+        } else {
+            alert('抱歉，名字不正確。請再試一次！');
+            // 將圖片移到棄置區
+            moveImageToArea(correctStudent.name, 'discard');
         }
 
-        // 移除提問框
-        const popup = document.querySelector('.input-popup');
-        if (popup) {
-            popup.remove();
-        }
+        // 隱藏輸入姓名彈出框
+        const namePopup = document.getElementById('namePopup');
+        namePopup.style.display = 'none';
+        attemptCount++;
+        updateStats();
     }
 
     // 移動圖片到指定區域
@@ -403,7 +505,7 @@
         const student = students.splice(studentIndex, 1)[0];
         populateGrid();
 
-        const targetGrid = document.getElementById(area === 'discard' ? 'discardGrid' : 'considerGrid');
+        const targetGrid = document.getElementById(`${area}Grid`);
         const div = document.createElement('div');
         div.className = 'grid-item';
         const img = document.createElement('img');
