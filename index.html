@@ -36,7 +36,68 @@
             justify-content: space-between;
             width: 100%;
         }
-        /* 密碼輸入框 */
+        /* 棄置區和考慮區 */
+        #discardArea, #considerArea {
+            width: 8%;
+            min-height: 500px;
+            background-color: #e0e0e0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #discardArea h2, #considerArea h2 {
+            color: #333;
+        }
+        /* 主要圖片區域 */
+        #imageGrid {
+            width: 84%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 20px;
+        }
+        /* 圖片樣式 */
+        .grid-item {
+            position: relative;
+            width: 100%;
+            cursor: pointer;
+        }
+        .grid-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
+            border: 2px solid transparent;
+        }
+        /* 放大效果僅在支援滑鼠懸停的裝置上啟用 */
+        @media (hover: hover) {
+            .grid-item img:hover,
+            .grid-item.enlarged img {
+                transform: scale(1.3); /* 放大130% */
+                border: 5px solid #ff5722; /* 加上色框 */
+                z-index: 10;
+                position: relative;
+            }
+        }
+        .active {
+            border: 5px solid blue;
+        }
+        /* 排除區樣式 */
+        #excludeArea {
+            background-color: #ffe6e6; /* 淺粉色 */
+        }
+        #excludeArea .grid-item img {
+            width: 100%;
+            height: auto;
+            transform: scale(0.1); /* 縮小10% */
+            transition: border-color 0.3s ease-in-out; /* 刪去縮放功能 */
+            border: 2px solid transparent;
+        }
+        /* 隱藏排除區圖片的滑鼠懸停放大效果 */
+        @media (hover: hover) {
+            #excludeArea .grid-item img:hover {
+                transform: scale(0.1); /* 保持10%縮小，不放大 */
+            }
+        }
+        /* 密碼輸入框樣式 */
         #passwordPopup {
             display: none;
             position: fixed;
@@ -50,18 +111,6 @@
             text-align: center;
             z-index: 1000;
         }
-        /* 彈出框樣式 */
-        .input-popup, .placement-popup {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-            width: 200px;
-            text-align: center;
-        }
         /* 成績揭曉區的樣式 */
         #resultArea {
             display: none;
@@ -72,6 +121,22 @@
             margin-top: 20px;
             max-width: 300px;
             border-radius: 10px;
+        }
+        /* 排行榜的樣式 */
+        #leaderboard {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: left;
+        }
+        #leaderboard h2 {
+            color: #333;
+        }
+        #leaderboard ol {
+            padding-left: 20px;
+        }
+        #leaderboard li {
+            font-size: 16px;
+            margin-bottom: 5px;
         }
         /* 彩帶和煙火效果 */
         .celebration {
@@ -127,14 +192,31 @@
     <img id="correctImage" src="" alt="Correct Student Image">
 </div>
 
+<!-- 排行榜 -->
+<div id="leaderboard">
+    <h2>排行榜</h2>
+    <button onclick="requestClearLeaderboard()">清空排行榜</button>
+    <ol id="leaderboardList">
+        <!-- 排行榜內容將由 JavaScript 動態插入 -->
+    </ol>
+</div>
+
 <!-- 彩帶或煙火慶祝動畫 -->
 <canvas id="celebrationCanvas" class="celebration"></canvas>
 
 <script>
+    const students = [
+        {image: 'guess01.jpg', name: '周筠棋'},
+        {image: 'guess02.jpg', name: '徐浩鈞'},
+        {image: 'guess03.jpg', name: '朱品睿'},
+        {image: 'guess04.jpg', name: '黃澔祤'},
+        // 其他學生資料...
+    ];
+
     let viewCount = 0;
     let attemptCount = 0;
-    let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
     let correctStudent = null; // 記錄正確的學生
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
 
     // 密碼驗證
     function verifyPassword() {
@@ -214,8 +296,30 @@
         update();
     }
 
+    // 動態生成圖片
+    function populateGrid() {
+        const grid = document.getElementById('imageGrid');
+        grid.innerHTML = '';
+        const shuffledStudents = shuffle(students); // 打亂順序
+        shuffledStudents.forEach((student, index) => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            const img = document.createElement('img');
+            img.src = student.image;
+            img.alt = `Student ${index + 1}`;
+
+            div.appendChild(img);
+            grid.appendChild(div);
+
+            div.addEventListener('click', () => {
+                viewCount++;
+                openPlacementPopup(student, div);
+                updateStats();
+            });
+        });
+    }
+
     window.onload = function() {
-        // 初始化圖片和排行榜
         populateGrid();
         updateLeaderboard();
     };
