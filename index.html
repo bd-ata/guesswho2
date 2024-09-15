@@ -21,14 +21,20 @@
             color: #666;
             font-size: 18px;
         }
-        /* 主要佈局 */
+        /* 主容器 */
         .main-container {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             max-width: 1200px;
             margin: 20px auto;
             padding: 0 10px;
+        }
+        /* 上方內容 */
+        .top-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
         }
         /* 棄置區和考慮區 */
         #discardArea, #considerArea {
@@ -63,9 +69,10 @@
         }
         .grid-item img:hover,
         .grid-item.enlarged img {
-            transform: scale(1.8); /* 放大180% */
+            transform: scale(1.3); /* 放大130% */
             border: 5px solid #ff5722; /* 加上色框 */
             z-index: 10;
+            position: relative;
         }
         .active {
             border: 5px solid blue;
@@ -130,8 +137,8 @@
             font-size: 16px;
             margin-bottom: 5px;
         }
-        /* 棄置區和考慮區的圖片樣式 */
-        #discardArea .grid-item img, #considerArea .grid-item img {
+        /* 棄置區、考慮區和排除區的圖片樣式 */
+        #discardArea .grid-item img, #considerArea .grid-item img, #excludeArea .grid-item img {
             width: 100%;
             height: auto;
             transform: scale(0.8);
@@ -145,22 +152,32 @@
 
 <!-- 主容器 -->
 <div class="main-container">
-    <!-- 棄置區 -->
-    <div id="discardArea">
-        <h2>棄置區</h2>
-        <div class="grid-container" id="discardGrid">
-            <!-- 棄置的圖片將放置在這裡 -->
+    <!-- 上方內容 -->
+    <div class="top-container">
+        <!-- 棄置區 -->
+        <div id="discardArea">
+            <h2>棄置區</h2>
+            <div class="grid-container" id="discardGrid">
+                <!-- 棄置的圖片將放置在這裡 -->
+            </div>
+        </div>
+        <!-- 主要圖片區域 -->
+        <div id="imageGrid">
+            <!-- 圖片將由 JavaScript 動態插入 -->
+        </div>
+        <!-- 考慮區 -->
+        <div id="considerArea">
+            <h2>考慮區</h2>
+            <div class="grid-container" id="considerGrid">
+                <!-- 考慮中的圖片將放置在這裡 -->
+            </div>
         </div>
     </div>
-    <!-- 主要圖片區域 -->
-    <div id="imageGrid">
-        <!-- 圖片將由 JavaScript 動態插入 -->
-    </div>
-    <!-- 考慮區 -->
-    <div id="considerArea">
-        <h2>考慮區</h2>
-        <div class="grid-container" id="considerGrid">
-            <!-- 考慮中的圖片將放置在這裡 -->
+    <!-- 排除區 -->
+    <div id="excludeArea">
+        <h2>排除區</h2>
+        <div class="grid-container" id="excludeGrid">
+            <!-- 排除的圖片將放置在這裡 -->
         </div>
     </div>
 </div>
@@ -242,7 +259,9 @@
     let mainGridImages = [];
     let discardedImages = [];
     let consideredImages = [];
+    let excludedImages = [];
     let yesAttempts = 0; // 選擇「是」的次數
+    let gameEnded = false; // 遊戲是否結束
 
     // 排行榜數據
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
@@ -316,6 +335,8 @@
 
     // 顯示「這是您家寶貝嗎？」彈出框
     function openPlacementPopup(student, imgElement) {
+        if (gameEnded) return; // 遊戲結束後不再顯示彈出框
+
         currentStudent = student;
         const popup = document.getElementById('placementPopup');
 
@@ -386,8 +407,8 @@
         } else {
             alert('哎呀！不是喔～再試一次吧！');
             updateStats();
-            // 直接將圖片移到棄置區
-            moveImage('不是');
+            // 直接將圖片移到排除區
+            moveImage('排除');
         }
 
         closeInputPopup();
@@ -395,6 +416,7 @@
 
     // 遊戲結束
     function endGame() {
+        gameEnded = true; // 設定遊戲結束
         // 隱藏遊戲區域
         document.querySelector('.main-container').style.display = 'none';
         document.getElementById('stats').style.display = 'none';
@@ -402,7 +424,7 @@
         document.getElementById('resultArea').style.display = 'block';
     }
 
-    // 移動圖片到棄置區或考慮區
+    // 移動圖片到棄置區、考慮區或排除區
     function moveImage(choice) {
         let targetArea = null;
         let targetArray = null;
@@ -413,6 +435,9 @@
         } else if (choice === '考慮中') {
             targetArea = document.getElementById('considerGrid');
             targetArray = consideredImages;
+        } else if (choice === '排除') {
+            targetArea = document.getElementById('excludeGrid');
+            targetArray = excludedImages;
         }
 
         if (targetArea && targetArray) {
@@ -429,7 +454,7 @@
         }
 
         // 如果主區域沒有圖片了，提示使用者可以重新選擇
-        if (mainGridImages.length === 0) {
+        if (mainGridImages.length === 0 && !gameEnded) {
             alert('主區域已無圖片，您可以在考慮區或棄置區重新選擇。');
         }
     }
