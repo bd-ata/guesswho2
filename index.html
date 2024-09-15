@@ -494,7 +494,13 @@
         const resultArea = document.getElementById('resultArea');
         const finalStats = document.getElementById('finalStats');
         finalStats.textContent = `總共查看了${viewAttempts}次，嘗試了${inputAttempts}次。 成功了${totalSuccesses}次。`;
-        
+
+        // 確保只添加一張正確學生圖片
+        const existingImage = document.getElementById('correctStudentImage');
+        if (existingImage) {
+            existingImage.remove();
+        }
+
         const correctImage = document.createElement('img');
         correctImage.id = 'correctStudentImage';
         correctImage.src = currentStudent.image;
@@ -531,10 +537,6 @@
             if (index > -1) {
                 const imageItem = mainGridImages.splice(index, 1)[0];
                 imageItem.element.classList.remove('active');
-                // 移除現有的點擊事件
-                const newDiv = imageItem.element.cloneNode(true);
-                imageItem.element.parentNode.replaceChild(newDiv, imageItem.element);
-                imageItem.element = newDiv;
                 imageItem.element.style.transform = 'scale(0.8)'; // 縮小圖片
                 targetArea.appendChild(imageItem.element);
                 targetArray.push(imageItem);
