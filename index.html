@@ -52,7 +52,7 @@
         #imageGrid {
             width: 84%;
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 改為一排兩張 */
+            grid-template-columns: repeat(2, 1fr); /* 一排兩張 */
             grid-gap: 20px;
         }
         /* 圖片樣式 */
@@ -407,12 +407,15 @@
         inputPopup.style.top = `${top}px`;
         inputPopup.style.left = `${left}px`;
 
-        // 點擊外部關閉提問框
+        // 禁止點擊其他地方關閉
+        // Commented out to prevent accidental closing
+        /*
         window.onclick = function(event) {
             if (event.target == inputPopup) {
                 inputPopup.style.display = 'none';
             }
         }
+        */
     }
 
     // 處理猜測
@@ -459,7 +462,7 @@
             const grid = document.getElementById(gridId);
             const imgs = grid.getElementsByTagName('img');
             for (let img of imgs) {
-                if (img.alt === `Student ${students.findIndex(s => s.name === name) + 1}` || img.alt === name) {
+                if (img.alt === name) { // 假設 img.alt 是學生姓名
                     return img.parentElement;
                 }
             }
@@ -578,7 +581,7 @@
             div.className = 'grid-item';
             const img = document.createElement('img');
             img.src = student.image;
-            img.alt = `Student ${index + 1}`;
+            img.alt = student.name;
 
             div.appendChild(img);
             grid.appendChild(div);
