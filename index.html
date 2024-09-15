@@ -1,481 +1,126 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五年一班猜猜我是誰</title>
+    <title>猜猜我是誰</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             text-align: center;
-            margin: 0;
-            padding: 0;
         }
-        h1 {
-            color: #333;
+        .student {
+            display: inline-block;
+            margin: 20px;
+            position: relative;
+        }
+        .student img {
+            width: 150px;
+            height: 150px;
+            transition: transform 0.3s ease, border 0.3s ease;
+        }
+        .student img:hover {
+            transform: scale(1.3);
+            border: 5px solid #ffcc00;
+        }
+        .result {
             margin-top: 20px;
-        }
-        p {
-            color: #666;
-            font-size: 18px;
-        }
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 10px;
-        }
-        .top-container {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-        }
-        #discardArea, #considerArea {
-            width: 8%;
-            min-height: 500px;
-            background-color: #e0e0e0;
-            padding: 10px;
-            box-sizing: border-box;
-            position: relative;
-        }
-        #discardArea h2, #considerArea h2 {
-            color: #333;
-        }
-        #imageGrid {
-            width: 84%;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 20px;
-        }
-        .grid-item {
-            position: relative;
-            width: 100%;
-            cursor: pointer;
-        }
-        .grid-item img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
-            border: 2px solid transparent;
-        }
-        @media (hover: hover) {
-            .grid-item img:hover,
-            .grid-item.enlarged img {
-                transform: scale(1.3); /* 放大130% */
-                border: 5px solid #ff5722; /* 加上色框 */
-                z-index: 10;
-                position: relative;
-            }
-        }
-        .active {
-            border: 5px solid blue;
-        }
-        .input-popup, .placement-popup, .change-mind-popup {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-            width: 220px;
-            text-align: center;
-        }
-        .input-popup input {
-            padding: 5px;
-            font-size: 14px;
-            width: 90%;
-            margin-top: 5px;
-        }
-        .input-popup button, .placement-popup button, .change-mind-popup button {
-            padding: 5px 10px;
-            font-size: 14px;
-            margin-top: 10px;
-            cursor: pointer;
-            margin-right: 5px;
-            border: none;
-            border-radius: 3px;
-        }
-        .submit-button {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .yes-button {
-            background-color: green;
-            color: white;
-        }
-        .no-button {
-            background-color: red;
-            color: white;
-        }
-        .consider-button {
-            background-color: yellow;
-            color: black;
-        }
-        .return-button {
-            background-color: #2196F3;
-            color: white;
-        }
-        #leaderboard {
-            max-width: 800px;
-            margin: 20px auto;
-            text-align: left;
-        }
-        #leaderboard h2 {
-            color: #333;
-        }
-        #leaderboard ol {
-            padding-left: 20px;
-        }
-        #leaderboard li {
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-        #discardArea .grid-item img, #considerArea .grid-item img {
-            width: 100%;
-            height: auto;
-            transform: scale(0.8);
-            border: 2px solid transparent;
-        }
-        #excludeArea .grid-item img {
-            width: 100%;
-            height: auto;
-            transform: scale(0.3);
-            border: 2px solid transparent;
-        }
-        #excludeArea {
-            background-color: #ffe6e6;
-        }
-        .change-mind-popup p {
             font-weight: bold;
-            color: #d32f2f;
+        }
+        .exclude-zone {
+            margin-top: 40px;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            min-height: 100px;
+        }
+        .exclude-zone h2 {
+            margin: 0;
+            color: #666;
+        }
+        .exclude-zone .student {
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
-<h1>五年一班猜猜我是誰</h1>
-<p>點選圖片放大來看猜猜看這是不是您家寶貝～點一下就可以選擇喔！</p>
+    <h1>猜猜我是誰</h1>
+    <div id="student-list"></div>
+    <div class="result" id="result"></div>
 
-<div class="main-container">
-    <div class="top-container">
-        <div id="discardArea">
-            <h2>棄置區</h2>
-            <div class="grid-container" id="discardGrid"></div>
-        </div>
-        <div id="imageGrid"></div>
-        <div id="considerArea">
-            <h2>考慮區</h2>
-            <div class="grid-container" id="considerGrid"></div>
-        </div>
-    </div>
-    <div id="excludeArea">
+    <div class="exclude-zone" id="exclude-zone">
         <h2>排除區</h2>
-        <div class="grid-container" id="excludeGrid"></div>
     </div>
-</div>
 
-<p id="stats">您已查看了0張圖片，總共嘗試了0次。</p>
+    <script>
+        const students = [
+            "周筠棋", "徐浩鈞", "朱品睿", "黃澔祤", "歐宸嘉", "黃煜程", "詹運生", "陳勁瑜", "林則佐", 
+            "林則佑", "周兆員", "廖淯翔", "陳柏安", "張幃睿", "闕芷榕", "張子晴", "羅璽恩", "朱采彤", 
+            "高婧", "吳欣穎", "黃暐霓", "韋欣圻", "邱琝容", "黃宇晨", "黃昱馷", "李孟軒", "劉萱綺", 
+            "劉芷晴", "王心儀", "張瑀航", "陳湘晴", "傅禹童"
+        ];
 
-<div id="resultArea" style="display: none;">
-    <h2>遊戲結束！</h2>
-    <p>恭喜你答對了～歡迎您趁此機會和孩子分享彼此的好惡，給孩子多一點心情日記的素材吧😊</p>
-</div>
+        const studentListDiv = document.getElementById('student-list');
+        const excludeZoneDiv = document.getElementById('exclude-zone');
+        const resultDiv = document.getElementById('result');
 
-<div id="leaderboard">
-    <h2>排行榜</h2>
-    <button onclick="promptClearLeaderboard()">清空排行榜</button>
-    <ol id="leaderboardList"></ol>
-</div>
-
-<div id="inputPopup" class="input-popup">
-    <p>就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
-    <input type="text" id="nameInput" placeholder="輸入您家寶貝的全名">
-    <br>
-    <button class="submit-button" onclick="checkGuess()">確認送出</button>
-</div>
-
-<div id="placementPopup" class="placement-popup">
-    <p>這是您家寶貝嗎？</p>
-    <button class="yes-button" onclick="handlePlacement('是')">是</button>
-    <button class="no-button" onclick="handlePlacement('不是')">不是</button>
-    <button class="consider-button" onclick="handlePlacement('考慮中')">考慮中</button>
-</div>
-
-<div id="changeMindPopup" class="change-mind-popup">
-    <p>按下按鈕將圖片放回原位</p>
-    <button class="return-button" onclick="moveBackToMain(event)">將圖片放回原位</button>
-</div>
-
-<script>
-    const students = [
-        {image: 'guess01.jpg', name: '周筠棋'},
-        {image: 'guess02.jpg', name: '徐浩鈞'},
-        {image: 'guess03.jpg', name: '朱品睿'},
-        {image: 'guess04.jpg', name: '黃澔祤'},
-        {image: 'guess05.jpg', name: '歐宸嘉'},
-        {image: 'guess06.jpg', name: '黃煜程'},
-        {image: 'guess07.jpg', name: '詹運生'},
-        {image: 'guess08.jpg', name: '陳勁瑜'},
-        {image: 'guess09.jpg', name: '林則佐'},
-        {image: 'guess10.jpg', name: '林則佑'},
-        {image: 'guess11.jpg', name: '周兆員'},
-        {image: 'guess12.jpg', name: '廖淯翔'},
-        {image: 'guess13.jpg', name: '陳柏安'},
-        {image: 'guess14.jpg', name: '張幃睿'},
-        {image: 'guess15.jpg', name: '闕芷榕'},
-        {image: 'guess16.jpg', name: '張子晴'},
-        {image: 'guess17.jpg', name: '羅璽恩'},
-        {image: 'guess18.jpg', name: '朱采彤'},
-        {image: 'guess19.jpg', name: '高婧'},
-        {image: 'guess20.jpg', name: '吳欣穎'},
-        {image: 'guess21.jpg', name: '黃暐霓'},
-        {image: 'guess22.jpg', name: '韋欣圻'},
-        {image: 'guess23.jpg', name: '邱琝容'},
-        {image: 'guess24.jpg', name: '黃宇晨'},
-        {image: 'guess25.jpg', name: '黃昱馷'},
-        {image: 'guess26.jpg', name: '李孟軒'},
-        {image: 'guess27.jpg', name: '劉萱綺'},
-        {image: 'guess28.jpg', name: '劉芷晴'},
-        {image: 'guess29.jpg', name: '王心儀'},
-        {image: 'guess30.jpg', name: '張瑀航'},
-        {image: 'guess31.jpg', name: '陳湘晴'},
-        {image: 'guess32.jpg', name: '傅禹童'}
-    ];
-
-    let currentStudent = null;
-    let lastClickedImage = null;
-    let totalAttempts = 0;
-    let totalViews = 0;
-    let mainGridImages = [];
-    let discardedImages = [];
-    let consideredImages = [];
-    let currentImageItem = null;
-    let isReturnedToMainGrid = false;
-
-    let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-
-    // 更新排行榜
-    function updateLeaderboard() {
-        const leaderboardList = document.getElementById('leaderboardList');
-        leaderboardList.innerHTML = '';
-        leaderboard.slice(0, 10).forEach((entry, index) => {
-            const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
-            const li = document.createElement('li');
-            li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
-            leaderboardList.appendChild(li);
-        });
-    }
-
-    // 提示清空排行榜並要求密碼
-    function promptClearLeaderboard() {
-        const password = prompt('請輸入密碼以清空排行榜：');
-        if (password === 'ata999') {
-            clearLeaderboard();
-        } else {
-            alert('密碼錯誤，無法清空排行榜。');
-        }
-    }
-
-    // 清空排行榜
-    function clearLeaderboard() {
-        localStorage.removeItem('leaderboard');
-        leaderboard = [];
-        updateLeaderboard();
-        alert('排行榜已清空');
-    }
-
-    function populateGrid() {
-        const grid = document.getElementById('imageGrid');
-        grid.innerHTML = '';
-        const shuffledStudents = shuffle(students);
-        shuffledStudents.forEach((student, index) => {
-            const div = document.createElement('div');
-            div.className = 'grid-item';
-            const img = document.createElement('img');
-            img.src = student.image;
-            img.alt = `Student ${index + 1}`;
-
-            div.appendChild(img);
-            grid.appendChild(div);
-
-            mainGridImages.push({student: student, element: div});
-
-            div.addEventListener('click', () => {
-                totalViews++;
-                updateStats();
-                if (!isReturnedToMainGrid) {
-                    openPlacementPopup(student, div);
-                } else {
-                    isReturnedToMainGrid = false; 
-                }
-            });
-        });
-    }
-
-    // 顯示“這是您家寶貝嗎？”的選項框
-    function openPlacementPopup(student, imgElement) {
-        currentStudent = student;
-        const popup = document.getElementById('placementPopup');
-
-        if (lastClickedImage && lastClickedImage !== imgElement) {
-            lastClickedImage.classList.remove('active');
-        }
-
-        imgElement.classList.add('active');
-        lastClickedImage = imgElement;
-
-        const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
-        popup.style.top = `${y}px`;
-        popup.style.left = `${x}px`;
-        popup.style.display = 'block';
-    }
-
-    function handlePlacement(choice) {
-        selectedPlacement = choice;
-
-        if (choice === '是') {
-            openInputPopup();
-        } else {
-            moveImage(choice);
-            closeAllPopups();
-        }
-    }
-
-    // 顯示姓名輸入彈出框
-    function openInputPopup() {
-        const popup = document.getElementById('inputPopup');
-        const imgElement = lastClickedImage;
-
-        const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
-        popup.style.top = `${y}px`;
-        popup.style.left = `${x}px`;
-        popup.style.display = 'block';
-    }
-
-    function checkGuess() {
-        const guess = document.getElementById('nameInput').value.trim();
-        totalAttempts++;
-        updateStats();
-        if (guess === currentStudent.name) {
-            alert('恭喜你答對了～');
-            removeImageFromMainGrid();
-            endGame();
-        } else {
-            alert('哎呀！不是喔～再試一次吧！');
-            moveImage('排除');
-        }
-        closeInputPopup(); // 確保輸入框在作答後消失
-    }
-
-    function endGame() {
-        document.querySelector('.main-container').style.display = 'none';
-        document.getElementById('stats').style.display = 'none';
-        document.getElementById('resultArea').style.display = 'block';
-        window.scrollTo(0, 0);
-    }
-
-    function moveImage(choice) {
-        let targetArea = null;
-        if (choice === '不是') {
-            targetArea = document.getElementById('discardGrid');
-        } else if (choice === '考慮中') {
-            targetArea = document.getElementById('considerGrid');
-        } else if (choice === '排除') {
-            targetArea = document.getElementById('excludeGrid');
-        }
-
-        if (targetArea) {
-            const index = mainGridImages.findIndex(item => item.student === currentStudent);
-            if (index > -1) {
-                const imageItem = mainGridImages.splice(index, 1)[0];
-                imageItem.element.classList.remove('active');
-                imageItem.element.style.transform = 'scale(0.8)';
-                addChangeMindEvent(imageItem);
-                targetArea.appendChild(imageItem.element);
+        // 將學生順序隨機打亂
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
         }
 
-        if (mainGridImages.length === 0) {
-            alert('主區域已無圖片，您可以在考慮區或棄置區重新選擇。');
-        }
-    }
+        shuffle(students);
 
-    function addChangeMindEvent(imageItem) {
-        imageItem.element.addEventListener('click', (event) => {
-            event.stopPropagation();
-            showChangeMindPopup(imageItem);
+        students.forEach((student, index) => {
+            const studentDiv = document.createElement('div');
+            studentDiv.classList.add('student');
+            studentDiv.innerHTML = `
+                <img src="https://your-github-repo-path/guess${String(index+1).padStart(2, '0')}.jpg" alt="學生圖片">
+            `;
+            studentDiv.addEventListener('click', () => showOptions(studentDiv, index));
+            studentListDiv.appendChild(studentDiv);
         });
-    }
 
-    function showChangeMindPopup(imageItem) {
-        currentImageItem = imageItem;
-        const imgElement = imageItem.element;
-        const popup = document.getElementById('changeMindPopup');
-        const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
-        popup.style.top = `${y}px`;
-        popup.style.left = `${x}px`;
-        popup.style.display = 'block';
-    }
-
-    function moveBackToMain(event) {
-        if (event) event.stopPropagation();
-        if (!currentImageItem) return;
-        const imageItem = currentImageItem;
-        currentImageItem = null;
-
-        imageItem.element.parentElement.removeChild(imageItem.element);
-        mainGridImages.push(imageItem);
-        document.getElementById('imageGrid').appendChild(imageItem.element);
-        isReturnedToMainGrid = true;
-        closeChangeMindPopup();
-    }
-
-    function closeChangeMindPopup() {
-        document.getElementById('changeMindPopup').style.display = 'none';
-    }
-
-    function removeImageFromMainGrid() {
-        const index = mainGridImages.findIndex(item => item.student === currentStudent);
-        if (index > -1) {
-            const imageItem = mainGridImages.splice(index, 1)[0];
-            imageItem.element.remove();
+        function showOptions(studentDiv, index) {
+            const optionsDiv = document.createElement('div');
+            optionsDiv.innerHTML = `
+                <p>這是您家寶貝嗎？</p>
+                <select id="options${index}">
+                    <option value="">選擇答案</option>
+                    <option value="yes">是</option>
+                    <option value="no">不是</option>
+                    <option value="maybe">考慮中</option>
+                </select>
+                <button onclick="handleChoice(${index})">確認</button>
+            `;
+            studentDiv.appendChild(optionsDiv);
         }
-    }
 
-    function closeInputPopup() {
-        document.getElementById('inputPopup').style.display = 'none';
-        document.getElementById('nameInput').value = '';
-    }
-
-    function updateStats() {
-        const stats = document.getElementById('stats');
-        stats.textContent = `您已查看了${totalViews}張圖片，總共嘗試了${totalAttempts}次。`;
-    }
-
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+        function handleChoice(index) {
+            const selectedOption = document.getElementById(`options${index}`).value;
+            if (selectedOption === 'yes') {
+                const nameInput = prompt("就決定是這張了嗎？輸入寶貝的全名試試吧！");
+                if (nameInput === students[index]) {
+                    alert("你猜對了！");
+                } else {
+                    alert("哎唷！不是喔～再試一次吧！");
+                    moveToExcludeZone(index);
+                }
+            } else if (selectedOption === 'no') {
+                moveToExcludeZone(index);
+            } else {
+                alert("你可以再考慮一下！");
+            }
         }
-        return array;
-    }
 
-    window.onload = function() {
-        populateGrid();
-        updateLeaderboard();
-    };
-</script>
+        function moveToExcludeZone(index) {
+            const studentDiv = studentListDiv.children[index];
+            excludeZoneDiv.appendChild(studentDiv);
+        }
+    </script>
 
 </body>
 </html>
