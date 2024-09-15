@@ -168,16 +168,28 @@
         }
         /* 排除區背景色 */
         #excludeArea {
+            width: 10%; /* 修改為10% */
             background-color: #ffe6e6; /* 淺粉色 */
         }
-        /* 排除區的圖片放大效果 */
-        @media (hover: hover) {
-            #excludeArea .grid-item img:hover {
-                transform: scale(1.625); /* 放大至與主區域放大後相同的尺寸 */
-                border: 5px solid #ff5722;
-                z-index: 10;
-                position: relative;
-            }
+        /* 排除區的圖片放大效果已移除 */
+        /* 不再有排除區圖片的 hover 放大效果 */
+
+        /* 成績揭曉區動畫 */
+        #resultArea {
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 正確學生圖片樣式 */
+        #correctStudentImage {
+            width: 200%;
+            height: auto;
+            margin-top: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -218,13 +230,14 @@
     </div>
 </div>
 
-<!-- 顯示嘗試次數和成功次數 -->
-<p id="stats">總共嘗試了0次，成功了0次。</p>
+<!-- 顯示查看次數和嘗試次數 -->
+<p id="stats">總共查看了0次，嘗試了0次。</p>
 
 <!-- 成績揭曉區 -->
 <div id="resultArea" style="display: none;">
     <h2>遊戲結束！</h2>
     <p>恭喜你答對了～歡迎您趁此機會和孩子分享彼此的好惡，給孩子多一點心情日記的素材吧😊</p>
+    <img id="correctStudentImage" src="" alt="正確學生">
 </div>
 
 <!-- 排行榜 -->
@@ -290,7 +303,8 @@
 
     let currentStudent = null;
     let lastClickedImage = null;
-    let totalAttempts = 0;
+    let viewAttempts = 0; // 查看次數
+    let inputAttempts = 0; // 嘗試次數（輸入姓名的次數）
     let totalSuccesses = 0;
     let selectedPlacement = '';
     let mainGridImages = [];
@@ -308,19 +322,24 @@
         const leaderboardList = document.getElementById('leaderboardList');
         leaderboardList.innerHTML = '';
         leaderboard.slice(0, 10).forEach((entry, index) => {
-            const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
+            const rate = entry.yesAttempts > 0 ? ((entry.successes / entry.yesAttempts) * 100).toFixed(2) : '0.00';
             const li = document.createElement('li');
             li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
             leaderboardList.appendChild(li);
         });
     }
 
-    // 清空排行榜
+    // 清空排行榜（加入密碼ata999）
     function clearLeaderboard() {
-        localStorage.removeItem('leaderboard');
-        leaderboard = [];
-        updateLeaderboard();
-        alert('排行榜已清空');
+        const password = prompt('請輸入密碼以清空排行榜：');
+        if (password === 'ata999') {
+            localStorage.removeItem('leaderboard');
+            leaderboard = [];
+            updateLeaderboard();
+            alert('排行榜已清空');
+        } else {
+            alert('密碼錯誤，無法清空排行榜');
+        }
     }
 
     // 動態生成圖片
@@ -341,7 +360,11 @@
             mainGridImages.push({student: student, element: div});
 
             // 統一使用 click 事件
-            div.addEventListener('click', () => openPlacementPopup(student, div));
+            div.addEventListener('click', () => {
+                viewAttempts++; // 增加查看次數
+                updateStats();
+                openPlacementPopup(student, div);
+            });
         });
     }
 
@@ -363,8 +386,10 @@
 
         // 設定彈出框的位置在圖片上方
         const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
+        const x = rect.left + (rect.width / 2) - (popupWidth / 2) + window.scrollX;
+        const y = rect.top + window.scrollY - popupHeight - 10; // 在圖片上方顯示
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
@@ -376,12 +401,12 @@
 
         if (choice === '是') {
             yesAttempts++;
+            inputAttempts++; // 增加嘗試次數
             // 如果選擇「是」，則彈出姓名輸入框
             openInputPopup();
         } else {
             // 移動圖片到相應的區域
             moveImage(choice);
-            totalAttempts++;
             updateStats();
             closeAllPopups();
         }
@@ -394,8 +419,10 @@
 
         // 設定彈出框的位置在圖片上方
         const rect = imgElement.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
+        const x = rect.left + (rect.width / 2) - (popupWidth / 2) + window.scrollX;
+        const y = rect.top + window.scrollY - popupHeight - 10;
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
@@ -405,7 +432,10 @@
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
 
-        totalAttempts++;
+        if (guess === '') {
+            alert('請輸入學生的名字');
+            return;
+        }
 
         if (guess === currentStudent.name) {
             totalSuccesses++;
@@ -418,9 +448,9 @@
             endGame();
         } else {
             alert('哎呀！不是喔～再試一次吧！');
-            updateStats();
             // 直接將圖片移到排除區
             moveImage('排除');
+            updateStats();
             closeAllPopups();
         }
 
@@ -436,7 +466,13 @@
         // 隱藏「這是您家寶貝嗎？」彈出框
         document.getElementById('placementPopup').style.display = 'none';
         // 顯示成績揭曉區
-        document.getElementById('resultArea').style.display = 'block';
+        const resultArea = document.getElementById('resultArea');
+        const correctImage = document.createElement('img');
+        correctImage.id = 'correctStudentImage';
+        correctImage.src = currentStudent.image;
+        correctImage.alt = currentStudent.name;
+        resultArea.appendChild(correctImage);
+        resultArea.style.display = 'block';
         // 自動滾動到頁面頂部
         window.scrollTo(0, 0);
     }
@@ -463,7 +499,10 @@
             if (index > -1) {
                 const imageItem = mainGridImages.splice(index, 1)[0];
                 imageItem.element.classList.remove('active');
-                imageItem.element.addEventListener('click', () => openPlacementPopup(currentStudent, imageItem.element));
+                // 移除現有的點擊事件
+                const newDiv = imageItem.element.cloneNode(true);
+                imageItem.element.parentNode.replaceChild(newDiv, imageItem.element);
+                imageItem.element = newDiv;
                 imageItem.element.style.transform = 'scale(0.8)'; // 縮小圖片
                 targetArea.appendChild(imageItem.element);
                 targetArray.push(imageItem);
@@ -485,17 +524,17 @@
         }
     }
 
-    // 更新嘗試次數和成功次數
+    // 更新查看次數和嘗試次數
     function updateStats() {
         const stats = document.getElementById('stats');
-        stats.textContent = `總共嘗試了${totalAttempts}次，成功了${totalSuccesses}次。`;
+        stats.textContent = `總共查看了${viewAttempts}次，嘗試了${inputAttempts}次。 成功了${totalSuccesses}次。`;
     }
 
     // 檢查是否進入排行榜
     function checkLeaderboard() {
-        const correctRate = totalSuccesses / yesAttempts;
+        const correctRate = yesAttempts > 0 ? totalSuccesses / yesAttempts : 0;
         // 將當前的正確率與排行榜上的數據進行比較
-        let minCorrectRate = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes / leaderboard[leaderboard.length - 1].yesAttempts : 0;
+        let minCorrectRate = leaderboard.length > 0 ? (leaderboard[leaderboard.length - 1].successes / leaderboard[leaderboard.length - 1].yesAttempts) : 0;
 
         if (correctRate > minCorrectRate || leaderboard.length < 10) {
             // 將玩家資料暫時加入排行榜，待輸入姓名後再更新
@@ -542,8 +581,6 @@
     // 關閉「這是您家寶貝嗎？」彈出框
     function closePlacementPopup() {
         document.getElementById('placementPopup').style.display = 'none';
-        // 重置「是」按鈕的顯示
-        document.querySelector('.yes-button').style.display = 'inline-block';
     }
 
     // 隨機排列圖片
