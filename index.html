@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五年一班猜猜我是誰</title>
     <style>
-        /* 基本样式 */
+        /* 基本樣式 */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -30,13 +30,13 @@
             margin: 20px auto;
             padding: 0 10px;
         }
-        /* 上方内容 */
+        /* 上方內容 */
         .top-container {
             display: flex;
             justify-content: space-between;
             width: 100%;
         }
-        /* 弃置区和考虑区 */
+        /* 棄置區和考慮區 */
         #discardArea, #considerArea {
             width: 8%;
             min-height: 500px;
@@ -48,14 +48,14 @@
         #discardArea h2, #considerArea h2 {
             color: #333;
         }
-        /* 主要图片区域 */
+        /* 主要圖片區域 */
         #imageGrid {
             width: 84%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-gap: 20px;
         }
-        /* 图片样式 */
+        /* 圖片樣式 */
         .grid-item {
             position: relative;
             width: 100%;
@@ -68,7 +68,7 @@
             transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
             border: 2px solid transparent;
         }
-        /* 放大效果仅在支持鼠标悬停的设备上启用 */
+        /* 放大效果僅在支援滑鼠懸停的裝置上啟用 */
         @media (hover: hover) {
             .grid-item img:hover,
             .grid-item.enlarged img {
@@ -81,7 +81,7 @@
         .active {
             border: 5px solid blue;
         }
-        /* 弹出框样式 */
+        /* 彈出框樣式 */
         .input-popup, .placement-popup, .change-mind-popup {
             display: none;
             position: absolute;
@@ -99,7 +99,7 @@
             width: 90%;
             margin-top: 5px;
         }
-        .input-popup button, .placement-popup button {
+        .input-popup button, .placement-popup button, .change-mind-popup button {
             padding: 5px 10px;
             font-size: 14px;
             margin-top: 10px;
@@ -112,7 +112,7 @@
             background-color: #4CAF50;
             color: white;
         }
-        /* 按钮颜色 */
+        /* 按鈕顏色 */
         .yes-button {
             background-color: green;
             color: white;
@@ -125,7 +125,11 @@
             background-color: yellow;
             color: black;
         }
-        /* 排行榜的样式 */
+        .return-button {
+            background-color: #2196F3;
+            color: white;
+        }
+        /* 排行榜的樣式 */
         #leaderboard {
             max-width: 800px;
             margin: 20px auto;
@@ -141,36 +145,25 @@
             font-size: 16px;
             margin-bottom: 5px;
         }
-        /* 弃置区、考虑区和排除区的图片样式 */
+        /* 棄置區、考慮區和排除區的圖片樣式 */
         #discardArea .grid-item img, #considerArea .grid-item img {
             width: 100%;
             height: auto;
             transform: scale(0.8);
-            transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
             border: 2px solid transparent;
         }
-        /* 弃置区和考虑区的图片放大效果 */
-        @media (hover: hover) {
-            #discardArea .grid-item img:hover,
-            #considerArea .grid-item img:hover {
-                transform: scale(1.625); /* 放大至与主区域放大后相同的尺寸 */
-                border: 5px solid #ff5722;
-                z-index: 10;
-                position: relative;
-            }
-        }
-        /* 排除区的图片样式 */
+        /* 排除區的圖片樣式 */
         #excludeArea .grid-item img {
             width: 100%;
             height: auto;
-            transform: scale(0.5); /* 缩小50% */
+            transform: scale(0.3); /* 縮小30% */
             border: 2px solid transparent;
         }
-        /* 排除区背景色 */
+        /* 排除區背景色 */
         #excludeArea {
-            background-color: #ffe6e6; /* 浅粉色 */
+            background-color: #ffe6e6; /* 淺粉色 */
         }
-        /* 改变心意的提示框文字效果 */
+        /* 改變心意的提示框文字效果 */
         .change-mind-popup p {
             font-weight: bold;
             color: #d32f2f;
@@ -180,47 +173,47 @@
 <body>
 
 <h1>五年一班猜猜我是誰</h1>
-<p>点选图片放大来看猜猜看这是不是您家宝贝～点一下就可以选择哦！</p>
+<p>點選圖片放大來看猜猜看這是不是您家寶貝～點一下就可以選擇喔！</p>
 
 <!-- 主容器 -->
 <div class="main-container">
-    <!-- 上方内容 -->
+    <!-- 上方內容 -->
     <div class="top-container">
-        <!-- 弃置区 -->
+        <!-- 棄置區 -->
         <div id="discardArea">
-            <h2>弃置区</h2>
+            <h2>棄置區</h2>
             <div class="grid-container" id="discardGrid">
-                <!-- 弃置的图片将放置在这里 -->
+                <!-- 棄置的圖片將放置在這裡 -->
             </div>
         </div>
-        <!-- 主要图片区域 -->
+        <!-- 主要圖片區域 -->
         <div id="imageGrid">
-            <!-- 图片将由 JavaScript 动态插入 -->
+            <!-- 圖片將由 JavaScript 動態插入 -->
         </div>
-        <!-- 考虑区 -->
+        <!-- 考慮區 -->
         <div id="considerArea">
-            <h2>考虑区</h2>
+            <h2>考慮區</h2>
             <div class="grid-container" id="considerGrid">
-                <!-- 考虑中的图片将放置在这里 -->
+                <!-- 考慮中的圖片將放置在這裡 -->
             </div>
         </div>
     </div>
-    <!-- 排除区 -->
+    <!-- 排除區 -->
     <div id="excludeArea">
-        <h2>排除区</h2>
+        <h2>排除區</h2>
         <div class="grid-container" id="excludeGrid">
-            <!-- 排除的图片将放置在这里 -->
+            <!-- 排除的圖片將放置在這裡 -->
         </div>
     </div>
 </div>
 
-<!-- 显示尝试次数和成功次数 -->
-<p id="stats">总共尝试了0次，成功了0次。</p>
+<!-- 顯示查看張數和嘗試次數 -->
+<p id="stats">您已查看了0張圖片，總共嘗試了0次。</p>
 
-<!-- 成绩揭晓区 -->
+<!-- 成績揭曉區 -->
 <div id="resultArea" style="display: none;">
-    <h2>游戏结束！</h2>
-    <p>恭喜你答对了～欢迎您趁此机会和孩子分享彼此的好恶，给孩子多一点心情日记的素材吧😊</p>
+    <h2>遊戲結束！</h2>
+    <p>恭喜你答對了～歡迎您趁此機會和孩子分享彼此的好惡，給孩子多一點心情日記的素材吧😊</p>
 </div>
 
 <!-- 排行榜 -->
@@ -228,29 +221,30 @@
     <h2>排行榜</h2>
     <button onclick="clearLeaderboard()">清空排行榜</button>
     <ol id="leaderboardList">
-        <!-- 排行榜内容将由 JavaScript 动态插入 -->
+        <!-- 排行榜內容將由 JavaScript 動態插入 -->
     </ol>
 </div>
 
-<!-- 「这是您家宝贝吗？」弹出框 -->
+<!-- 「這是您家寶貝嗎？」彈出框 -->
 <div id="placementPopup" class="placement-popup">
-    <p>这是您家宝贝吗？</p>
+    <p>這是您家寶貝嗎？</p>
     <button class="yes-button" onclick="handlePlacement('是')">是</button>
     <button class="no-button" onclick="handlePlacement('不是')">不是</button>
-    <button class="consider-button" onclick="handlePlacement('考虑中')">考虑中</button>
+    <button class="consider-button" onclick="handlePlacement('考慮中')">考慮中</button>
 </div>
 
-<!-- 姓名输入弹出框 -->
+<!-- 姓名輸入彈出框 -->
 <div id="inputPopup" class="input-popup">
-    <p>就决定是这张了吗？输入宝贝的名字试试看看吧</p>
-    <input type="text" id="nameInput" placeholder="输入学生的名字">
+    <p>就決定是這張了嗎？輸入寶貝的名字試試看吧</p>
+    <input type="text" id="nameInput" placeholder="輸入學生的名字">
     <br>
-    <button class="submit-button" onclick="checkGuess()">确认送出</button>
+    <button class="submit-button" onclick="checkGuess()">確認送出</button>
 </div>
 
-<!-- 改变心意提示弹出框 -->
+<!-- 改變心意提示彈出框 -->
 <div id="changeMindPopup" class="change-mind-popup">
-    <p>改变心意了吗？点两下鼠标或长按可以将图片移回原处看仔细</p>
+    <p>改變心意了嗎？按下按鈕將圖片放回原位吧</p>
+    <button class="return-button" onclick="moveBackToMain()">將圖片放回原位</button>
 </div>
 
 <script>
@@ -291,17 +285,19 @@
 
     let currentStudent = null;
     let lastClickedImage = null;
-    let totalAttempts = 0;
+    let totalAttempts = 0; // 嘗試次數
+    let totalViews = 0; // 查看張數
     let totalSuccesses = 0;
     let selectedPlacement = '';
     let mainGridImages = [];
     let discardedImages = [];
     let consideredImages = [];
     let excludedImages = [];
-    let yesAttempts = 0; // 选择「是」的次数
-    let gameEnded = false; // 游戏是否结束
+    let yesAttempts = 0; // 選擇「是」的次數
+    let gameEnded = false; // 遊戲是否結束
+    let currentImageItem = null; // 目前操作的圖片項目
 
-    // 排行榜数据
+    // 排行榜數據
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
 
     // 更新排行榜
@@ -311,7 +307,7 @@
         leaderboard.slice(0, 10).forEach((entry, index) => {
             const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
             const li = document.createElement('li');
-            li.textContent = `${entry.name} - 猜对率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
+            li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
             leaderboardList.appendChild(li);
         });
     }
@@ -324,11 +320,11 @@
         alert('排行榜已清空');
     }
 
-    // 动态生成图片
+    // 動態生成圖片
     function populateGrid() {
         const grid = document.getElementById('imageGrid');
         grid.innerHTML = '';
-        const shuffledStudents = shuffle(students); // 打乱顺序
+        const shuffledStudents = shuffle(students); // 打亂順序
         shuffledStudents.forEach((student, index) => {
             const div = document.createElement('div');
             div.className = 'grid-item';
@@ -341,57 +337,61 @@
 
             mainGridImages.push({student: student, element: div});
 
-            // 统一使用 click 事件
-            div.addEventListener('click', () => openPlacementPopup(student, div));
+            // 統一使用 click 事件
+            div.addEventListener('click', () => {
+                totalViews++; // 增加查看張數
+                updateStats();
+                openPlacementPopup(student, div);
+            });
         });
     }
 
-    // 显示「这是您家宝贝吗？」弹出框
+    // 顯示「這是您家寶貝嗎？」彈出框
     function openPlacementPopup(student, imgElement) {
-        if (gameEnded) return; // 游戏结束后不再显示弹出框
+        if (gameEnded) return; // 遊戲結束後不再顯示彈出框
 
         currentStudent = student;
         const popup = document.getElementById('placementPopup');
 
-        // 移除上一次点击的图片边框
+        // 移除上一次點擊的圖片邊框
         if (lastClickedImage && lastClickedImage !== imgElement) {
             lastClickedImage.classList.remove('active');
         }
 
-        // 加上蓝色边框
+        // 加上藍色邊框
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
 
-        // 设置弹出框的位置在图片上方
+        // 設定彈出框的位置在圖片上方
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
-        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在图片上方显示
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10; // 在圖片上方顯示
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
     }
 
-    // 处理选择
+    // 處理選擇
     function handlePlacement(choice) {
         selectedPlacement = choice;
 
         if (choice === '是') {
             yesAttempts++;
-            // 如果选择「是」，则弹出姓名输入框
+            // 如果選擇「是」，則彈出姓名輸入框
             openInputPopup();
         } else {
-            // 移动图片到相应的区域
+            // 移動圖片到相應的區域
             moveImage(choice);
             closeAllPopups();
         }
     }
 
-    // 显示姓名输入弹出框
+    // 顯示姓名輸入彈出框
     function openInputPopup() {
         const popup = document.getElementById('inputPopup');
         const imgElement = lastClickedImage;
 
-        // 设置弹出框的位置在图片上方
+        // 設定彈出框的位置在圖片上方
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
         const y = rect.top + window.scrollY - popup.offsetHeight - 10;
@@ -400,25 +400,24 @@
         popup.style.display = 'block';
     }
 
-    // 检查输入是否正确
+    // 檢查輸入是否正確
     function checkGuess() {
         const guess = document.getElementById('nameInput').value.trim();
 
-        totalAttempts++; // 只在输入姓名时计数
+        totalAttempts++; // 只在輸入姓名時計數
+        updateStats();
 
         if (guess === currentStudent.name) {
             totalSuccesses++;
-            alert(`恭喜你答对了～`);
-            updateStats();
+            alert(`恭喜你答對了～`);
             checkLeaderboard();
-            // 移除图片
+            // 移除圖片
             removeImageFromMainGrid();
-            // 游戏结束，进入成绩揭晓区
+            // 遊戲結束，進入成績揭曉區
             endGame();
         } else {
-            alert('哎呀！不是哦～再试一次吧！');
-            updateStats();
-            // 直接将图片移到排除区
+            alert('哎呀！不是喔～再試一次吧！');
+            // 直接將圖片移到排除區
             moveImage('排除');
             closeAllPopups();
         }
@@ -426,21 +425,21 @@
         closeInputPopup();
     }
 
-    // 游戏结束
+    // 遊戲結束
     function endGame() {
-        gameEnded = true; // 设置游戏结束
-        // 隐藏游戏区域
+        gameEnded = true; // 設定遊戲結束
+        // 隱藏遊戲區域
         document.querySelector('.main-container').style.display = 'none';
         document.getElementById('stats').style.display = 'none';
-        // 隐藏「这是您家宝贝吗？」弹出框
+        // 隱藏「這是您家寶貝嗎？」彈出框
         document.getElementById('placementPopup').style.display = 'none';
-        // 显示成绩揭晓区
+        // 顯示成績揭曉區
         document.getElementById('resultArea').style.display = 'block';
-        // 自动滚动到页面顶部
+        // 自動滾動到頁面頂部
         window.scrollTo(0, 0);
     }
 
-    // 移动图片到弃置区、考虑区或排除区
+    // 移動圖片到棄置區、考慮區或排除區
     function moveImage(choice) {
         let targetArea = null;
         let targetArray = null;
@@ -448,7 +447,7 @@
         if (choice === '不是') {
             targetArea = document.getElementById('discardGrid');
             targetArray = discardedImages;
-        } else if (choice === '考虑中') {
+        } else if (choice === '考慮中') {
             targetArea = document.getElementById('considerGrid');
             targetArray = consideredImages;
         } else if (choice === '排除') {
@@ -457,61 +456,37 @@
         }
 
         if (targetArea && targetArray) {
-            // 从主区域移除图片
+            // 從主區域移除圖片
             const index = mainGridImages.findIndex(item => item.student === currentStudent);
             if (index > -1) {
                 const imageItem = mainGridImages.splice(index, 1)[0];
                 imageItem.element.classList.remove('active');
-                imageItem.element.style.transform = 'scale(0.8)'; // 缩小图片
+                imageItem.element.style.transform = 'scale(0.8)'; // 縮小圖片
 
-                // 添加双击或长按事件监听器
-                addReturnEvent(imageItem, targetArea);
-
+                // 添加點擊事件監聽器
+                addChangeMindEvent(imageItem);
                 targetArea.appendChild(imageItem.element);
                 targetArray.push(imageItem);
             }
         }
 
-        // 如果主区域没有图片了，提示用户可以重新选择
+        // 如果主區域沒有圖片了，提示使用者可以重新選擇
         if (mainGridImages.length === 0 && !gameEnded) {
-            alert('主区域已无图片，您可以在考虑区或弃置区重新选择。');
+            alert('主區域已無圖片，您可以在考慮區或棄置區重新選擇。');
         }
     }
 
-    // 添加双击或长按事件监听器
-    function addReturnEvent(imageItem, targetArea) {
-        let timer;
-
-        // 桌面设备双击
-        imageItem.element.addEventListener('dblclick', () => {
-            showChangeMindPopup(imageItem.element);
-            moveBackToMain(imageItem, targetArea);
-        });
-
-        // 移动设备长按
-        imageItem.element.addEventListener('touchstart', (e) => {
-            timer = setTimeout(() => {
-                showChangeMindPopup(imageItem.element);
-                moveBackToMain(imageItem, targetArea);
-            }, 800); // 长按800毫秒触发
-        });
-
-        imageItem.element.addEventListener('touchend', (e) => {
-            clearTimeout(timer);
+    // 添加點擊事件監聽器，顯示提示框
+    function addChangeMindEvent(imageItem) {
+        imageItem.element.addEventListener('click', () => {
+            showChangeMindPopup(imageItem);
         });
     }
 
-    // 将图片移回主区域
-    function moveBackToMain(imageItem, fromArea) {
-        fromArea.removeChild(imageItem.element);
-        mainGridImages.push(imageItem);
-        document.getElementById('imageGrid').appendChild(imageItem.element);
-        // 移除事件监听器，重新添加点击事件
-        imageItem.element.onclick = () => openPlacementPopup(imageItem.student, imageItem.element);
-    }
-
-    // 显示“改变心意了吗？”的提示框
-    function showChangeMindPopup(imgElement) {
+    // 顯示“改變心意了嗎？”的提示框
+    function showChangeMindPopup(imageItem) {
+        currentImageItem = imageItem; // 設定當前圖片項目
+        const imgElement = imageItem.element;
         const popup = document.getElementById('changeMindPopup');
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
@@ -519,13 +494,38 @@
         popup.style.top = `${y}px`;
         popup.style.left = `${x}px`;
         popup.style.display = 'block';
-
-        setTimeout(() => {
-            popup.style.display = 'none';
-        }, 2000); // 2秒后自动消失
     }
 
-    // 从主区域移除图片
+    // 將圖片移回主區域
+    function moveBackToMain() {
+        if (!currentImageItem) return;
+        const imageItem = currentImageItem;
+        currentImageItem = null;
+
+        // 從當前區域移除圖片
+        imageItem.element.parentElement.removeChild(imageItem.element);
+
+        // 添加回主區域
+        mainGridImages.push(imageItem);
+        document.getElementById('imageGrid').appendChild(imageItem.element);
+
+        // 移除事件監聽器，重新添加點擊事件
+        imageItem.element.onclick = () => {
+            totalViews++; // 增加查看張數
+            updateStats();
+            openPlacementPopup(imageItem.student, imageItem.element);
+        };
+
+        // 關閉提示框
+        closeChangeMindPopup();
+    }
+
+    // 關閉“改變心意了嗎？”的提示框
+    function closeChangeMindPopup() {
+        document.getElementById('changeMindPopup').style.display = 'none';
+    }
+
+    // 從主區域移除圖片
     function removeImageFromMainGrid() {
         const index = mainGridImages.findIndex(item => item.student === currentStudent);
         if (index > -1) {
@@ -534,28 +534,28 @@
         }
     }
 
-    // 更新尝试次数和成功次数
+    // 更新查看張數和嘗試次數
     function updateStats() {
         const stats = document.getElementById('stats');
-        stats.textContent = `总共尝试了${totalAttempts}次，成功了${totalSuccesses}次。`;
+        stats.textContent = `您已查看了${totalViews}張圖片，總共嘗試了${totalAttempts}次。`;
     }
 
-    // 检查是否进入排行榜
+    // 檢查是否進入排行榜
     function checkLeaderboard() {
         const correctRate = totalSuccesses / yesAttempts;
-        // 将当前的正确率与排行榜上的数据进行比较
+        // 將當前的正確率與排行榜上的數據進行比較
         let minCorrectRate = leaderboard.length > 0 ? leaderboard[leaderboard.length - 1].successes / leaderboard[leaderboard.length - 1].yesAttempts : 0;
 
         if (correctRate > minCorrectRate || leaderboard.length < 10) {
-            // 将玩家资料暂时加入排行榜，待输入姓名后再更新
+            // 將玩家資料暫時加入排行榜，待輸入姓名後再更新
             leaderboard.push({name: '', successes: totalSuccesses, yesAttempts: yesAttempts});
-            // 按正确率排序
+            // 按正確率排序
             leaderboard.sort((a, b) => (b.successes / b.yesAttempts) - (a.successes / a.yesAttempts));
             // 找到玩家的排名
             const playerIndex = leaderboard.findIndex(entry => entry.name === '');
             const rank = playerIndex + 1;
-            // 提示玩家输入姓名，并显示排名和成绩
-            const playerName = prompt(`恭喜你进入排行榜！您的排名是第${rank}名，成绩是 ${(correctRate*100).toFixed(2)}%。\n请输入你的名字：`);
+            // 提示玩家輸入姓名，並顯示排名和成績
+            const playerName = prompt(`恭喜你進入排行榜！您的排名是第${rank}名，成績是 ${(correctRate*100).toFixed(2)}%。\n請輸入你的名字：`);
             if (playerName) {
                 leaderboard[playerIndex].name = playerName;
                 // 保留前十名
@@ -564,38 +564,39 @@
                 localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
                 updateLeaderboard();
             } else {
-                // 如果没有输入姓名，从排行榜中移除该项
+                // 如果沒有輸入姓名，從排行榜中移除該項
                 leaderboard.splice(playerIndex,1);
             }
         }
     }
 
-    // 关闭所有弹出框
+    // 關閉所有彈出框
     function closeAllPopups() {
         closeInputPopup();
         closePlacementPopup();
+        closeChangeMindPopup();
 
-        // 移除图片边框
+        // 移除圖片邊框
         if (lastClickedImage) {
             lastClickedImage.classList.remove('active');
             lastClickedImage = null;
         }
     }
 
-    // 关闭姓名输入弹出框
+    // 關閉姓名輸入彈出框
     function closeInputPopup() {
         document.getElementById('inputPopup').style.display = 'none';
         document.getElementById('nameInput').value = '';
     }
 
-    // 关闭「这是您家宝贝吗？」弹出框
+    // 關閉「這是您家寶貝嗎？」彈出框
     function closePlacementPopup() {
         document.getElementById('placementPopup').style.display = 'none';
-        // 重置「是」按钮的显示
+        // 重置「是」按鈕的顯示
         document.querySelector('.yes-button').style.display = 'inline-block';
     }
 
-    // 随机排列图片
+    // 隨機排列圖片
     function shuffle(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
