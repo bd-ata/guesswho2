@@ -36,66 +36,19 @@
             justify-content: space-between;
             width: 100%;
         }
-        /* 棄置區和考慮區 */
-        #discardArea, #considerArea {
-            width: 8%;
-            min-height: 500px;
-            background-color: #e0e0e0;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        #discardArea h2, #considerArea h2 {
-            color: #333;
-        }
-        /* 主要圖片區域 */
-        #imageGrid {
-            width: 84%;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 20px;
-        }
-        /* 圖片樣式 */
-        .grid-item {
-            position: relative;
-            width: 100%;
-            cursor: pointer;
-        }
-        .grid-item img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            transition: transform 0.3s ease-in-out, border-color 0.3s ease-in-out;
-            border: 2px solid transparent;
-        }
-        /* 放大效果僅在支援滑鼠懸停的裝置上啟用 */
-        @media (hover: hover) {
-            .grid-item img:hover,
-            .grid-item.enlarged img {
-                transform: scale(1.3); /* 放大130% */
-                border: 5px solid #ff5722; /* 加上色框 */
-                z-index: 10;
-                position: relative;
-            }
-        }
-        .active {
-            border: 5px solid blue;
-        }
-        /* 排除區樣式 */
-        #excludeArea {
-            background-color: #ffe6e6; /* 淺粉色 */
-        }
-        #excludeArea .grid-item img {
-            width: 100%;
-            height: auto;
-            transform: scale(0.1); /* 縮小10% */
-            transition: border-color 0.3s ease-in-out; /* 刪去縮放功能 */
-            border: 2px solid transparent;
-        }
-        /* 隱藏排除區圖片的滑鼠懸停放大效果 */
-        @media (hover: hover) {
-            #excludeArea .grid-item img:hover {
-                transform: scale(0.1); /* 保持10%縮小，不放大 */
-            }
+        /* 密碼輸入框 */
+        #passwordPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 1000;
         }
         /* 彈出框樣式 */
         .input-popup, .placement-popup {
@@ -109,21 +62,25 @@
             width: 200px;
             text-align: center;
         }
-        /* 排行榜的樣式 */
-        #leaderboard {
-            max-width: 800px;
-            margin: 20px auto;
-            text-align: left;
+        /* 成績揭曉區的樣式 */
+        #resultArea {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
         }
-        #leaderboard h2 {
-            color: #333;
+        #correctImage {
+            margin-top: 20px;
+            max-width: 300px;
+            border-radius: 10px;
         }
-        #leaderboard ol {
-            padding-left: 20px;
-        }
-        #leaderboard li {
-            font-size: 16px;
-            margin-bottom: 5px;
+        /* 彩帶和煙火效果 */
+        .celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -134,20 +91,16 @@
 
 <!-- 主容器 -->
 <div class="main-container">
-    <!-- 上方內容 -->
     <div class="top-container">
-        <!-- 棄置區 -->
         <div id="discardArea">
             <h2>棄置區</h2>
             <div class="grid-container" id="discardGrid">
                 <!-- 棄置的圖片將放置在這裡 -->
             </div>
         </div>
-        <!-- 主要圖片區域 -->
         <div id="imageGrid">
             <!-- 圖片將由 JavaScript 動態插入 -->
         </div>
-        <!-- 考慮區 -->
         <div id="considerArea">
             <h2>考慮區</h2>
             <div class="grid-container" id="considerGrid">
@@ -155,59 +108,35 @@
             </div>
         </div>
     </div>
-    <!-- 排除區 -->
-    <div id="excludeArea">
-        <h2>排除區</h2>
-        <div class="grid-container" id="excludeGrid">
-            <!-- 排除的圖片將放置在這裡 -->
-        </div>
-    </div>
 </div>
 
-<!-- 顯示查看次數和嘗試次數 -->
 <p id="stats">總共查看了0次，嘗試了0次。</p>
 
-<!-- 排行榜 -->
-<div id="leaderboard">
-    <h2>排行榜</h2>
-    <button onclick="requestClearLeaderboard()">清空排行榜</button>
-    <ol id="leaderboardList">
-        <!-- 排行榜內容將由 JavaScript 動態插入 -->
-    </ol>
-</div>
-
-<!-- 密碼輸入框 -->
-<div id="passwordPopup" class="input-popup">
+<!-- 密碼輸入彈出框 -->
+<div id="passwordPopup">
     <p>請輸入密碼以清空排行榜：</p>
     <input type="password" id="passwordInput" placeholder="輸入密碼">
     <br>
     <button class="submit-button" onclick="verifyPassword()">確認</button>
 </div>
 
+<!-- 成績揭曉區 -->
+<div id="resultArea">
+    <h2>遊戲結束！恭喜你答對了～</h2>
+    <p>這就是您的寶貝：</p>
+    <img id="correctImage" src="" alt="Correct Student Image">
+</div>
+
+<!-- 彩帶或煙火慶祝動畫 -->
+<canvas id="celebrationCanvas" class="celebration"></canvas>
+
 <script>
     let viewCount = 0;
     let attemptCount = 0;
     let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+    let correctStudent = null; // 記錄正確的學生
 
-    // 更新排行榜
-    function updateLeaderboard() {
-        const leaderboardList = document.getElementById('leaderboardList');
-        leaderboardList.innerHTML = '';
-        leaderboard.slice(0, 10).forEach((entry, index) => {
-            const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
-            const li = document.createElement('li');
-            li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
-            leaderboardList.appendChild(li);
-        });
-    }
-
-    // 請求清空排行榜
-    function requestClearLeaderboard() {
-        const passwordPopup = document.getElementById('passwordPopup');
-        passwordPopup.style.display = 'block';
-    }
-
-    // 驗證密碼
+    // 密碼驗證
     function verifyPassword() {
         const password = document.getElementById('passwordInput').value;
         if (password === 'ata999') {
@@ -228,41 +157,65 @@
 
     // 關閉密碼輸入框
     function closePasswordPopup() {
-        const passwordPopup = document.getElementById('passwordPopup');
-        passwordPopup.style.display = 'none';
+        document.getElementById('passwordPopup').style.display = 'none';
         document.getElementById('passwordInput').value = '';
     }
 
-    // 計數查看次數和嘗試次數
-    function updateStats() {
-        const stats = document.getElementById('stats');
-        stats.textContent = `總共查看了${viewCount}次，嘗試了${attemptCount}次。`;
+    // 顯示遊戲結束畫面，並顯示正確的圖片
+    function endGame() {
+        gameEnded = true;
+        document.querySelector('.main-container').style.display = 'none';
+        document.getElementById('stats').style.display = 'none';
+        document.getElementById('correctImage').src = correctStudent.image; // 顯示正確的學生圖片
+        document.getElementById('resultArea').style.display = 'block';
+        startCelebration();
     }
 
-    // 動態生成圖片
-    function populateGrid() {
-        const grid = document.getElementById('imageGrid');
-        grid.innerHTML = '';
-        const shuffledStudents = shuffle(students);
-        shuffledStudents.forEach((student, index) => {
-            const div = document.createElement('div');
-            div.className = 'grid-item';
-            const img = document.createElement('img');
-            img.src = student.image;
-            img.alt = `Student ${index + 1}`;
+    // 慶祝動畫（彩帶）
+    function startCelebration() {
+        const canvas = document.getElementById('celebrationCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 100;
 
-            div.appendChild(img);
-            grid.appendChild(div);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            div.addEventListener('click', () => {
-                viewCount++;
-                openPlacementPopup(student, div);
-                updateStats();
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                speedX: Math.random() * 2 - 1,
+                speedY: Math.random() * 2 + 2,
+                size: Math.random() * 5 + 2,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`
             });
-        });
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+
+                if (particle.y > canvas.height) {
+                    particle.y = 0 - particle.size;
+                    particle.x = Math.random() * canvas.width;
+                }
+
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            requestAnimationFrame(update);
+        }
+
+        update();
     }
 
     window.onload = function() {
+        // 初始化圖片和排行榜
         populateGrid();
         updateLeaderboard();
     };
