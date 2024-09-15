@@ -74,7 +74,7 @@
         .active {
             border: 5px solid blue;
         }
-        .input-popup, .change-mind-popup {
+        .input-popup, .placement-popup, .change-mind-popup {
             display: none;
             position: absolute;
             background-color: rgba(255, 255, 255, 0.95);
@@ -91,7 +91,7 @@
             width: 90%;
             margin-top: 5px;
         }
-        .input-popup button, .change-mind-popup button {
+        .input-popup button, .placement-popup button, .change-mind-popup button {
             padding: 5px 10px;
             font-size: 14px;
             margin-top: 10px;
@@ -103,6 +103,18 @@
         .submit-button {
             background-color: #4CAF50;
             color: white;
+        }
+        .yes-button {
+            background-color: green;
+            color: white;
+        }
+        .no-button {
+            background-color: red;
+            color: white;
+        }
+        .consider-button {
+            background-color: yellow;
+            color: black;
         }
         .return-button {
             background-color: #2196F3;
@@ -176,7 +188,7 @@
 
 <div id="leaderboard">
     <h2>排行榜</h2>
-    <button onclick="clearLeaderboard()">清空排行榜</button>
+    <button onclick="promptClearLeaderboard()">清空排行榜</button>
     <ol id="leaderboardList"></ol>
 </div>
 
@@ -185,6 +197,13 @@
     <input type="text" id="nameInput" placeholder="輸入您家寶貝的全名">
     <br>
     <button class="submit-button" onclick="checkGuess()">確認送出</button>
+</div>
+
+<div id="placementPopup" class="placement-popup">
+    <p>這是您家寶貝嗎？</p>
+    <button class="yes-button" onclick="handlePlacement('是')">是</button>
+    <button class="no-button" onclick="handlePlacement('不是')">不是</button>
+    <button class="consider-button" onclick="handlePlacement('考慮中')">考慮中</button>
 </div>
 
 <div id="changeMindPopup" class="change-mind-popup">
@@ -238,6 +257,38 @@
     let currentImageItem = null;
     let isReturnedToMainGrid = false;
 
+    let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+
+    // 更新排行榜
+    function updateLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboardList');
+        leaderboardList.innerHTML = '';
+        leaderboard.slice(0, 10).forEach((entry, index) => {
+            const rate = ((entry.successes / entry.yesAttempts) * 100).toFixed(2);
+            const li = document.createElement('li');
+            li.textContent = `${entry.name} - 猜對率：${rate}% (${entry.successes}/${entry.yesAttempts})`;
+            leaderboardList.appendChild(li);
+        });
+    }
+
+    // 提示清空排行榜並要求密碼
+    function promptClearLeaderboard() {
+        const password = prompt('請輸入密碼以清空排行榜：');
+        if (password === 'ata999') {
+            clearLeaderboard();
+        } else {
+            alert('密碼錯誤，無法清空排行榜。');
+        }
+    }
+
+    // 清空排行榜
+    function clearLeaderboard() {
+        localStorage.removeItem('leaderboard');
+        leaderboard = [];
+        updateLeaderboard();
+        alert('排行榜已清空');
+    }
+
     function populateGrid() {
         const grid = document.getElementById('imageGrid');
         grid.innerHTML = '';
@@ -258,7 +309,7 @@
                 totalViews++;
                 updateStats();
                 if (!isReturnedToMainGrid) {
-                    openInputPopup(student, div);
+                    openPlacementPopup(student, div);
                 } else {
                     isReturnedToMainGrid = false; 
                 }
@@ -266,9 +317,10 @@
         });
     }
 
-    function openInputPopup(student, imgElement) {
+    // 顯示“這是您家寶貝嗎？”的選項框
+    function openPlacementPopup(student, imgElement) {
         currentStudent = student;
-        const popup = document.getElementById('inputPopup');
+        const popup = document.getElementById('placementPopup');
 
         if (lastClickedImage && lastClickedImage !== imgElement) {
             lastClickedImage.classList.remove('active');
@@ -276,6 +328,30 @@
 
         imgElement.classList.add('active');
         lastClickedImage = imgElement;
+
+        const rect = imgElement.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
+        const y = rect.top + window.scrollY - popup.offsetHeight - 10;
+        popup.style.top = `${y}px`;
+        popup.style.left = `${x}px`;
+        popup.style.display = 'block';
+    }
+
+    function handlePlacement(choice) {
+        selectedPlacement = choice;
+
+        if (choice === '是') {
+            openInputPopup();
+        } else {
+            moveImage(choice);
+            closeAllPopups();
+        }
+    }
+
+    // 顯示姓名輸入彈出框
+    function openInputPopup() {
+        const popup = document.getElementById('inputPopup');
+        const imgElement = lastClickedImage;
 
         const rect = imgElement.getBoundingClientRect();
         const x = rect.left + (rect.width / 2) - (popup.offsetWidth / 2);
@@ -297,7 +373,7 @@
             alert('哎呀！不是喔～再試一次吧！');
             moveImage('排除');
         }
-        closeInputPopup();
+        closeInputPopup(); // 確保輸入框在作答後消失
     }
 
     function endGame() {
@@ -309,7 +385,11 @@
 
     function moveImage(choice) {
         let targetArea = null;
-        if (choice === '排除') {
+        if (choice === '不是') {
+            targetArea = document.getElementById('discardGrid');
+        } else if (choice === '考慮中') {
+            targetArea = document.getElementById('considerGrid');
+        } else if (choice === '排除') {
             targetArea = document.getElementById('excludeGrid');
         }
 
@@ -373,6 +453,11 @@
         }
     }
 
+    function closeInputPopup() {
+        document.getElementById('inputPopup').style.display = 'none';
+        document.getElementById('nameInput').value = '';
+    }
+
     function updateStats() {
         const stats = document.getElementById('stats');
         stats.textContent = `您已查看了${totalViews}張圖片，總共嘗試了${totalAttempts}次。`;
@@ -388,6 +473,7 @@
 
     window.onload = function() {
         populateGrid();
+        updateLeaderboard();
     };
 </script>
 
