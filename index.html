@@ -38,7 +38,7 @@
         }
         /* 棄置區和考慮區 */
         #discardArea, #considerArea {
-            width: 8%;
+            width: 20%;
             min-height: 500px;
             background-color: #e0e0e0;
             padding: 10px;
@@ -50,7 +50,7 @@
         }
         /* 主要圖片區域 */
         #imageGrid {
-            width: 84%;
+            width: 60%;
             display: grid;
             grid-template-columns: repeat(2, 1fr); /* 一排兩張 */
             grid-gap: 20px;
@@ -77,10 +77,7 @@
                 position: relative;
             }
         }
-        .active {
-            border: 5px solid blue;
-        }
-        /* 排除區樣式 */
+        /* 排除區圖片樣式 */
         #excludeArea {
             background-color: #ffe6e6; /* 淺粉色 */
             padding: 10px;
@@ -408,7 +405,7 @@
         inputPopup.style.left = `${left}px`;
 
         // 禁止點擊其他地方關閉
-        // Commented out to prevent accidental closing
+        // 若需要允許點擊外部關閉，取消以下註解
         /*
         window.onclick = function(event) {
             if (event.target == inputPopup) {
@@ -457,7 +454,7 @@
 
     // 查找指定姓名的圖片元素
     function findGridItemByName(name) {
-        const grids = ['imageGrid', 'discardGrid', 'considerGrid'];
+        const grids = ['imageGrid', 'discardGrid', 'considerGrid', 'excludeGrid'];
         for (let gridId of grids) {
             const grid = document.getElementById(gridId);
             const imgs = grid.getElementsByTagName('img');
